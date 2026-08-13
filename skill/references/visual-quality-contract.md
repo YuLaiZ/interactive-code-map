@@ -30,12 +30,12 @@ Apply this contract to every multi-group MapSpec and to every visual revision. I
 - Hovering the path, its label, or its short leader must highlight the same relationship. Apply the flowing highlight to the path and the label, including internal relationships.
 - Preserve each detail panel's scroll position by node. Keep the close control fixed while the detail content scrolls.
 - Canvas dragging must not select graph text. Node selection should focus the selected node into the visible working area.
-- `Fit` and the initial fit must reserve space for the fixed reading guide. The guide must remain a single row; at a narrow viewport preserve one row with horizontal overflow rather than wrapping it into two semantic rows.
+- `Fit` and the initial fit must reserve space for the fixed guide. It has three vertically stacked, labelled sections: Reading guide, Evidence status, and Controls. Keep the content inside each section on one row; at a narrow viewport preserve the three sections and use horizontal overflow instead of wrapping section content or hiding a section.
 
 ## Locale and fixed copy
 
 - Set `meta.uiLocale` to `en` or `zh-CN` for every new production MapSpec. Demo data is explicitly English; a Chinese delivery defaults to `zh-CN` unless the user requests English.
-- Localize all fixed UI together: reading guide, relationship keys, evidence-state labels in the guide and detail panel, detail controls, and empty-state copy. Keep business text in its supplied language.
+- Localize all fixed UI together: reading guide, relationship keys, evidence-state labels, controls guide, detail controls, and empty-state copy. Keep business text in its supplied language.
 - Use the diamond icon as the condition marker. The adjacent legend text provides the localized semantic name; do not repeat a language-specific word inside every condition pill.
 
 ## Required visual acceptance
@@ -46,7 +46,7 @@ Inspect an actual generated complex graph before declaring visual acceptance. Ch
 2. label ownership, collision avoidance, and leader length;
 3. group-frame size, title containment, and first-node clearance;
 4. hover feedback for condition, action, and internal relationships;
-5. localized copy in both the reading guide and the detail panel; and
-6. initial `Fit` and the Fit control with the one-line guide visible.
+5. localized copy in the reading guide, evidence status, controls guide, and detail panel; and
+6. initial `Fit` and the Fit control with all three guide sections visible.
 
 When a visual defect is found, reproduce it with a focused browser regression before changing the renderer. Regenerate both the representative Demo and the requested business artifact from the same renderer, then run the full test suite.

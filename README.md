@@ -51,6 +51,10 @@ Choose `china-friendly` only for an explicit China-mainland preference or audien
 
 Before generation, the agent asks whether keyboard operation and small-viewport usability should be included in this map’s acceptance scope. They are only promised and verified after the user confirms them; unselected capabilities do not block delivery.
 
+### In-map controls
+
+Each generated map has a fixed, localized guide with three labelled sections: reading guide, evidence status, and controls. The controls section shows the primary interaction: click a card for details; use `Tab` to select a card, `Enter` to open it, and `Esc` to close the detail panel. Nodes also accept `Space` as the equivalent button action. The generation-time confirmation above still determines whether keyboard and small-viewport behavior are in scope for acceptance.
+
 For a runnable original example, see [examples/demo/expected-mapspec.json](examples/demo/expected-mapspec.json), its small source repository, and [examples/demo/expected-output.html](examples/demo/expected-output.html). Rebuild the checked-in HTML with:
 
 ~~~bash

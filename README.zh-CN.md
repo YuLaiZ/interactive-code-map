@@ -51,6 +51,10 @@ node skill/renderer/build-html.mjs \
 
 生成前，Agent 会询问是否把键盘操作与小视口使用纳入本次图谱的验收范围。只有用户确认后，才承诺并验证这些能力；未选择不会阻塞图谱交付。
 
+### 图内操作说明
+
+每份生成图谱都有固定且本地化的三段说明：阅读说明、证据状态与操作。操作段会显示主要交互：点击卡片查看详情；使用 `Tab` 选择卡片，`Enter` 打开，`Esc` 关闭详情面板。节点也支持空格作为等价的按钮操作。上文的生成前确认仍决定键盘与小视口能力是否属于本次交付的验收范围。
+
 可直接查看原创示例：[examples/demo/expected-mapspec.json](examples/demo/expected-mapspec.json)、其小型示例源目录以及 [examples/demo/expected-output.html](examples/demo/expected-output.html)。可用以下命令重新生成已提交的 HTML：
 
 ~~~bash
