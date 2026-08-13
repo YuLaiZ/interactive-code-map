@@ -518,7 +518,7 @@ test('同一节点的跨组多入多出关系使用不同端口，避免星形�
   ]);
 });
 
-test('默认英文图例说明分组、条件、动作关系，条件前缀不复用箭头', async ({ page }) => {
+test('默认英文图例说明分组、关系、证据状态和操作方式', async ({ page }) => {
   await page.goto(demoUrl);
   const result = await page.evaluate(() => {
     const legend = document.querySelector('.icm-legend');
@@ -529,6 +529,7 @@ test('默认英文图例说明分组、条件、动作关系，条件前缀不�
       legendText,
       conditionPrefix: condition ? getComputedStyle(condition, '::before').content : '',
       actionPrefix: action ? getComputedStyle(action, '::before').content : '',
+      legendDirection: legend ? getComputedStyle(legend).flexDirection : '',
       legendWrap: legend ? getComputedStyle(legend).flexWrap : '',
       sectionRows: legend ? [...legend.querySelectorAll('.icm-legend-section')]
         .map((section) => Math.round(section.getBoundingClientRect().top)) : [],
@@ -540,10 +541,16 @@ test('默认英文图例说明分组、条件、动作关系，条件前缀不�
   expect(result.legendText).toContain('Condition');
   expect(result.legendText).toContain('Action relationship');
   expect(result.legendText).toContain('Evidence status');
+  expect(result.legendText).toContain('Controls');
+  expect(result.legendText).toContain('Click a card for details');
+  expect(result.legendText).toContain('Tab');
+  expect(result.legendText).toContain('Enter');
+  expect(result.legendText).toContain('Esc');
   expect(result.conditionPrefix).toContain('◇');
   expect(result.actionPrefix).toContain('→');
   expect(result.legendWrap).toBe('nowrap');
-  expect(Math.max(...result.sectionRows) - Math.min(...result.sectionRows)).toBeLessThanOrEqual(2);
+  expect(result.legendDirection).toBe('column');
+  expect(new Set(result.sectionRows).size).toBe(3);
 });
 
 test('条件框与所属边保持同一 Mermaid 标识，额外引线只服务于已避让标签', async ({ page }) => {

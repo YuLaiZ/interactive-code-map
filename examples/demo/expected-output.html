@@ -614,9 +614,10 @@ button:focus-visible,
   right: var(--icm-space-md);
   bottom: var(--icm-space-md);
   display: inline-flex;
+  flex-direction: column;
   flex-wrap: nowrap;
-  align-items: center;
-  gap: 6px var(--icm-space-sm);
+  align-items: stretch;
+  gap: 0;
   max-width: calc(100% - 32px);
   overflow-x: auto;
   overflow-y: hidden;
@@ -639,18 +640,58 @@ button:focus-visible,
   flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
+  min-height: 30px;
+  padding: 2px 0;
 }
 
 .icm-legend-section + .icm-legend-section {
-  padding-left: var(--icm-space-sm);
-  border-left: 1px solid rgb(91 132 170 / 55%);
+  padding-top: var(--icm-space-sm);
+  border-top: 1px solid rgb(91 132 170 / 55%);
 }
 
 .icm-legend-caption {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid #416b94;
+  border-radius: 5px;
   color: var(--icm-text-muted);
-  font-size: 11px;
-  font-weight: 750;
-  letter-spacing: 0.04em;
+  background: rgb(13 38 62 / 88%);
+  box-shadow: inset 0 1px 0 rgb(190 229 255 / 10%);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.icm-operation-pointer,
+.icm-operation-label {
+  color: #cfe3f7;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.icm-operation-separator {
+  color: #6f9bc1;
+  font-size: 12px;
+}
+
+.icm-operation-guide kbd {
+  min-width: 22px;
+  padding: 1px 4px;
+  border: 1px solid #476f96;
+  border-bottom-color: #6e9fc8;
+  border-radius: 4px;
+  color: #dff2ff;
+  background: #142b44;
+  box-shadow: inset 0 -1px 0 rgb(155 207 247 / 22%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .icm-reading-key {
@@ -1345,7 +1386,7 @@ function mapspecToMermaid(spec) {
     if (locale === 'zh-CN') {
       return {
         graphControls: '图谱控制', zoomIn: '放大', zoomOut: '缩小', fit: '全图', fitAriaLabel: '缩放至完整图谱', closeDetail: '关闭详情',
-        interactionHint: '点击图中卡片查看详情',
+        interactionHint: '点击图中卡片查看详情', controls: '操作', tabAction: '选择', enterAction: '打开', escapeAction: '关闭',
         ariaLabel: '图谱阅读说明与证据状态图例', reading: '阅读说明', group: '分组',
         condition: '条件', action: '动作关系', internal: '组内关系', evidence: '证据状态',
         verified: '已验证', inferred: '推断', unconfirmed: '待确认', emptyDetail: '暂无更多详情。',
@@ -1353,7 +1394,7 @@ function mapspecToMermaid(spec) {
     }
     return {
       graphControls: 'Graph controls', zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit to screen', fitAriaLabel: 'Fit to screen', closeDetail: 'Close detail',
-      interactionHint: 'Click a card for details',
+      interactionHint: 'Click a card for details', controls: 'Controls', tabAction: 'select', enterAction: 'open', escapeAction: 'close',
       ariaLabel: 'Graph reading guide and evidence status legend', reading: 'Reading guide', group: 'Group',
       condition: 'Condition', action: 'Action relationship', internal: 'Internal relationship', evidence: 'Evidence status',
       verified: 'verified', inferred: 'inferred', unconfirmed: 'unconfirmed', emptyDetail: 'No further details.',
@@ -3756,6 +3797,14 @@ function mapspecToMermaid(spec) {
           h('span', { className: 'claim-state verified' }, copy.verified),
           h('span', { className: 'claim-state inferred' }, copy.inferred),
           h('span', { className: 'claim-state unconfirmed' }, copy.unconfirmed),
+        ),
+        h('div', { className: 'icm-legend-section icm-operation-guide', 'aria-label': copy.controls },
+          h('span', { className: 'icm-legend-caption' }, copy.controls),
+          h('span', { className: 'icm-operation-pointer' }, copy.interactionHint),
+          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
+          h('kbd', null, 'Tab'), h('span', { className: 'icm-operation-label' }, copy.tabAction),
+          h('kbd', null, 'Enter'), h('span', { className: 'icm-operation-label' }, copy.enterAction),
+          h('kbd', null, 'Esc'), h('span', { className: 'icm-operation-label' }, copy.escapeAction),
         ),
       );
     }

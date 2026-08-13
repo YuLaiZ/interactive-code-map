@@ -205,7 +205,7 @@
     if (locale === 'zh-CN') {
       return {
         graphControls: '图谱控制', zoomIn: '放大', zoomOut: '缩小', fit: '全图', fitAriaLabel: '缩放至完整图谱', closeDetail: '关闭详情',
-        interactionHint: '点击图中卡片查看详情',
+        interactionHint: '点击图中卡片查看详情', controls: '操作', tabAction: '选择', enterAction: '打开', escapeAction: '关闭',
         ariaLabel: '图谱阅读说明与证据状态图例', reading: '阅读说明', group: '分组',
         condition: '条件', action: '动作关系', internal: '组内关系', evidence: '证据状态',
         verified: '已验证', inferred: '推断', unconfirmed: '待确认', emptyDetail: '暂无更多详情。',
@@ -213,7 +213,7 @@
     }
     return {
       graphControls: 'Graph controls', zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit to screen', fitAriaLabel: 'Fit to screen', closeDetail: 'Close detail',
-      interactionHint: 'Click a card for details',
+      interactionHint: 'Click a card for details', controls: 'Controls', tabAction: 'select', enterAction: 'open', escapeAction: 'close',
       ariaLabel: 'Graph reading guide and evidence status legend', reading: 'Reading guide', group: 'Group',
       condition: 'Condition', action: 'Action relationship', internal: 'Internal relationship', evidence: 'Evidence status',
       verified: 'verified', inferred: 'inferred', unconfirmed: 'unconfirmed', emptyDetail: 'No further details.',
@@ -2616,6 +2616,14 @@
           h('span', { className: 'claim-state verified' }, copy.verified),
           h('span', { className: 'claim-state inferred' }, copy.inferred),
           h('span', { className: 'claim-state unconfirmed' }, copy.unconfirmed),
+        ),
+        h('div', { className: 'icm-legend-section icm-operation-guide', 'aria-label': copy.controls },
+          h('span', { className: 'icm-legend-caption' }, copy.controls),
+          h('span', { className: 'icm-operation-pointer' }, copy.interactionHint),
+          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
+          h('kbd', null, 'Tab'), h('span', { className: 'icm-operation-label' }, copy.tabAction),
+          h('kbd', null, 'Enter'), h('span', { className: 'icm-operation-label' }, copy.enterAction),
+          h('kbd', null, 'Esc'), h('span', { className: 'icm-operation-label' }, copy.escapeAction),
         ),
       );
     }

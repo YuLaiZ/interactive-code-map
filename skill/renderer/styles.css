@@ -607,9 +607,10 @@ button:focus-visible,
   right: var(--icm-space-md);
   bottom: var(--icm-space-md);
   display: inline-flex;
+  flex-direction: column;
   flex-wrap: nowrap;
-  align-items: center;
-  gap: 6px var(--icm-space-sm);
+  align-items: stretch;
+  gap: 0;
   max-width: calc(100% - 32px);
   overflow-x: auto;
   overflow-y: hidden;
@@ -632,18 +633,58 @@ button:focus-visible,
   flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
+  min-height: 30px;
+  padding: 2px 0;
 }
 
 .icm-legend-section + .icm-legend-section {
-  padding-left: var(--icm-space-sm);
-  border-left: 1px solid rgb(91 132 170 / 55%);
+  padding-top: var(--icm-space-sm);
+  border-top: 1px solid rgb(91 132 170 / 55%);
 }
 
 .icm-legend-caption {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid #416b94;
+  border-radius: 5px;
   color: var(--icm-text-muted);
-  font-size: 11px;
-  font-weight: 750;
-  letter-spacing: 0.04em;
+  background: rgb(13 38 62 / 88%);
+  box-shadow: inset 0 1px 0 rgb(190 229 255 / 10%);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.icm-operation-pointer,
+.icm-operation-label {
+  color: #cfe3f7;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.icm-operation-separator {
+  color: #6f9bc1;
+  font-size: 12px;
+}
+
+.icm-operation-guide kbd {
+  min-width: 22px;
+  padding: 1px 4px;
+  border: 1px solid #476f96;
+  border-bottom-color: #6e9fc8;
+  border-radius: 4px;
+  color: #dff2ff;
+  background: #142b44;
+  box-shadow: inset 0 -1px 0 rgb(155 207 247 / 22%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .icm-reading-key {
