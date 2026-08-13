@@ -80,6 +80,10 @@ node skill/renderer/build-html.mjs \
 - npm run test:build checks Mermaid encoding, dependency configuration, build safety, and atomic output behavior.
 - npm run test:browser checks renderer regressions, including graph loading, optional keyboard and responsive capabilities, pan/zoom, CDN/SRI fallback, subgraph-title collision repair, and long htmlLabels fitting within their foreignObject bounds. It serves byte-for-byte, SRI-verified local UMD mirrors during tests; generated HTML itself still uses the pinned CDN sources.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+
 ## Security
 
 See [SECURITY.md](SECURITY.md) for vulnerability-reporting guidance.

@@ -1,9 +1,11 @@
 # Security Policy
 
+> **English** | [简体中文](SECURITY.zh-CN.md)
+
 ## Supported versions
 
-Security fixes are considered for the current `main` branch. This project has
-not yet published versioned releases.
+Security fixes are considered for the current `main` branch and, when
+available, the most recent published release.
 
 ## Reporting a vulnerability
 

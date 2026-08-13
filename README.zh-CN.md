@@ -80,9 +80,13 @@ node skill/renderer/build-html.mjs \
 - npm run test:build：验证 Mermaid 编码、依赖配置、构建安全和原子输出。
 - npm run test:browser：验证渲染器回归，包括图谱加载、可选的键盘与响应式能力、平移缩放、CDN/SRI 回退、子图标题避让，以及长 htmlLabels 是否落在 foreignObject 可用尺寸内。测试期间使用字节级一致、经 SRI 校验的本地 UMD 镜像；生成的 HTML 本身仍使用固定的 CDN 源。
 
+## 贡献
+
+贡献指引见 [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md)。
+
 ## 安全问题报告
 
-漏洞报告方式见 [SECURITY.md](SECURITY.md)。
+漏洞报告方式见 [SECURITY.zh-CN.md](SECURITY.zh-CN.md)。
 
 ## 许可证
 
