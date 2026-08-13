@@ -50,4 +50,4 @@ npm run test:browser
 
 ## 安全问题
 
-不要通过公开 issue 报告漏洞。请遵循 [SECURITY.md](SECURITY.md) 中的指引。
+不要通过公开 issue 报告漏洞。请遵循 [SECURITY.zh-CN.md](SECURITY.zh-CN.md) 中的指引。

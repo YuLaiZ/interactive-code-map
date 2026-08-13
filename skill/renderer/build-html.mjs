@@ -145,16 +145,23 @@ function parseArgs(argv) {
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
+    const optionValue = function optionValue(option) {
+      const value = argv[++index];
+      if (!value || value.startsWith('--')) {
+        throw new Error(`参数 ${option} 缺少值`);
+      }
+      return value;
+    };
     if (argument === '--in') {
-      args.input = argv[++index];
+      args.input = optionValue(argument);
     } else if (argument === '--out') {
-      args.output = argv[++index];
+      args.output = optionValue(argument);
     } else if (argument === '--repo-root') {
-      args.repoRoot = argv[++index];
+      args.repoRoot = optionValue(argument);
     } else if (argument === '--allow-test-fixture') {
       args.allowTestFixture = true;
     } else if (argument === '--cdn-profile') {
-      args.cdnProfile = argv[++index];
+      args.cdnProfile = optionValue(argument);
     } else {
       throw new Error(`未知参数: ${argument}`);
     }

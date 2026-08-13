@@ -527,6 +527,8 @@ test('默认英文图例说明分组、关系、证据状态和操作方式', as
     const action = document.querySelector('g.edgeLabel.icm-action-edge-label foreignObject > div');
     return {
       legendText,
+      legendRole: legend?.getAttribute('role') || '',
+      legendAriaLabel: legend?.getAttribute('aria-label') || '',
       conditionPrefix: condition ? getComputedStyle(condition, '::before').content : '',
       actionPrefix: action ? getComputedStyle(action, '::before').content : '',
       legendDirection: legend ? getComputedStyle(legend).flexDirection : '',
@@ -546,6 +548,8 @@ test('默认英文图例说明分组、关系、证据状态和操作方式', as
   expect(result.legendText).toContain('Tab');
   expect(result.legendText).toContain('Enter');
   expect(result.legendText).toContain('Esc');
+  expect(result.legendRole).toBe('group');
+  expect(result.legendAriaLabel).toBe('Graph reading guide, evidence status, and controls');
   expect(result.conditionPrefix).toContain('◇');
   expect(result.actionPrefix).toContain('→');
   expect(result.legendWrap).toBe('nowrap');

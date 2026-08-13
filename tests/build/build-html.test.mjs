@@ -71,6 +71,8 @@ console.log('== renderHtml 基本生成 ==');
   assert(!html.includes(tmp) && !html.includes('/Users/'), 'HTML 不含 repoRoot 或用户绝对路径');
   assert(html.includes('Click a card for details'), '英文产物含面向读者的卡片详情提示');
   assert(html.includes("controls: 'Controls'") && html.includes("escapeAction: 'close'"), '英文产物含键盘操作说明');
+  assert(html.includes("ariaLabel: 'Graph reading guide, evidence status, and controls'") && html.includes("role: 'group'"), '英文产物图例无障碍名称覆盖全部固定分组');
+  assert(html.includes('@media (prefers-reduced-motion: reduce)') && html.includes('#graph-canvas svg g.node rect {\n    transition: none;\n  }'), '节点过渡遵循 reduced-motion');
   const chineseSpec = baseSpec();
   chineseSpec.meta.uiLocale = 'zh-CN';
   const chineseHtml = renderHtml(chineseSpec, { repoRoot: tmp });
@@ -298,8 +300,10 @@ console.log('\n== CLI ⑨ CDN profile ==');
     const selected = runCli(['--in', 'spec.json', '--out', 'cn.html', '--repo-root', tmp, '--cdn-profile', 'china-friendly'], tmp);
     const selectedHtml = readFileSync(path.join(tmp, 'cn.html'), 'utf8');
     const rejected = runCli(['--in', 'spec.json', '--out', 'bad.html', '--repo-root', tmp, '--cdn-profile', 'fastest'], tmp);
+    const missingValue = runCli(['--in', 'spec.json', '--out', 'missing.html', '--repo-root', tmp, '--cdn-profile'], tmp);
     assert(selected.code === 0 && selectedHtml.includes('cdn.staticfile.org/react/18.3.1'), '--cdn-profile china-friendly 生成对应 HTML');
     assert(rejected.code !== 0 && !existsSync(path.join(tmp, 'bad.html')), '未知 --cdn-profile 拒绝且不写产物');
+    assert(missingValue.code !== 0 && !existsSync(path.join(tmp, 'missing.html')) && missingValue.stderr.includes('参数 --cdn-profile 缺少值'), '--cdn-profile 缺值明确拒绝且不写产物');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

@@ -304,6 +304,10 @@ button:focus-visible,
   #graph-canvas svg .icm-edge-hover-outline-flow {
     animation: none;
   }
+
+  #graph-canvas svg g.node rect {
+    transition: none;
+  }
 }
 
 #graph-canvas svg marker path {
