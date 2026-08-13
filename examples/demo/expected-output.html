@@ -533,10 +533,17 @@ button:focus-visible,
   box-shadow: var(--icm-shadow);
 }
 
-.icm-toolbar {
+.icm-controls {
   position: absolute;
   top: var(--icm-space-md);
   left: var(--icm-space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--icm-space-md);
+  max-width: calc(100% - (var(--icm-space-md) * 2));
+}
+
+.icm-toolbar {
   display: flex;
   gap: var(--icm-space-xs);
   padding: var(--icm-space-xs);
@@ -544,6 +551,39 @@ button:focus-visible,
   border-radius: var(--icm-radius);
   background: rgb(17 29 48 / 88%);
   backdrop-filter: blur(12px);
+}
+
+.icm-interaction-hint {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  margin: 0;
+  padding: 0 var(--icm-space-sm);
+  border: 1px solid color-mix(in srgb, var(--icm-border) 86%, #79bbed);
+  border-radius: 999px;
+  color: #d6e9f9;
+  background: rgb(13 38 62 / 76%);
+  box-shadow: 0 7px 18px rgb(0 0 0 / 18%);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.icm-interaction-hint-icon {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  place-items: center;
+  border: 1px solid #7fc1ef;
+  border-radius: 50%;
+  color: #dff2ff;
+  background: #225c88;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .icm-toolbar button,
@@ -714,14 +754,23 @@ g.node.icm-node-state-unconfirmed rect {
   stroke-dasharray: 2 3 !important;
 }
 
-g.node.icm-node-selected rect {
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--icm-accent) 74%, transparent));
-  stroke-width: 4px !important;
+#graph-canvas svg g.node rect {
+  transition: stroke 150ms ease, stroke-width 150ms ease, filter 150ms ease;
 }
 
-g.node:focus-visible rect {
-  stroke: var(--icm-accent) !important;
+/* 悬停、选中与键盘焦点使用同一套视觉语言：选中时保持 hover 效果，不再叠加另一层框。 */
+#graph-canvas svg g.node:hover rect,
+#graph-canvas svg g.node.icm-node-selected rect,
+#graph-canvas svg g.node:focus-visible rect {
+  stroke: #f0fbff !important;
   stroke-width: 4px !important;
+  filter:
+    drop-shadow(0 0 2px rgb(255 255 255 / 92%))
+    drop-shadow(0 0 12px rgb(111 201 255 / 92%));
+}
+
+#graph-canvas svg g.node:focus {
+  outline: none;
 }
 
 #graph-canvas svg .cluster-label[data-icm-label-kind="group-title"] foreignObject > div {
@@ -910,10 +959,12 @@ g.node:focus-visible rect {
 }
 
 @media (max-width: 768px) {
-  .icm-toolbar {
+  .icm-controls {
     top: var(--icm-space-sm);
     left: var(--icm-space-sm);
   }
+
+  .icm-interaction-hint { display: none; }
 
   .icm-legend {
     right: var(--icm-space-sm);
@@ -1293,14 +1344,16 @@ function mapspecToMermaid(spec) {
   function uiCopyForLocale(locale) {
     if (locale === 'zh-CN') {
       return {
-        graphControls: '图谱控制', zoomIn: '放大', zoomOut: '缩小', fit: '适配', closeDetail: '关闭详情',
+        graphControls: '图谱控制', zoomIn: '放大', zoomOut: '缩小', fit: '全图', fitAriaLabel: '缩放至完整图谱', closeDetail: '关闭详情',
+        interactionHint: '点击图中卡片查看详情',
         ariaLabel: '图谱阅读说明与证据状态图例', reading: '阅读说明', group: '分组',
         condition: '条件', action: '动作关系', internal: '组内关系', evidence: '证据状态',
         verified: '已验证', inferred: '推断', unconfirmed: '待确认', emptyDetail: '暂无更多详情。',
       };
     }
     return {
-      graphControls: 'Graph controls', zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit to screen', closeDetail: 'Close detail',
+      graphControls: 'Graph controls', zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit to screen', fitAriaLabel: 'Fit to screen', closeDetail: 'Close detail',
+      interactionHint: 'Click a card for details',
       ariaLabel: 'Graph reading guide and evidence status legend', reading: 'Reading guide', group: 'Group',
       condition: 'Condition', action: 'Action relationship', internal: 'Internal relationship', evidence: 'Evidence status',
       verified: 'verified', inferred: 'inferred', unconfirmed: 'unconfirmed', emptyDetail: 'No further details.',
@@ -3675,10 +3728,16 @@ function mapspecToMermaid(spec) {
     function Toolbar(props) {
       const panZoom = props.panZoom;
       const copy = uiCopyForLocale(props.locale);
-      return h('div', { className: 'icm-toolbar', role: 'toolbar', 'aria-label': copy.graphControls },
-        h('button', { type: 'button', onClick: function zoomIn() { panZoom.zoomIn(); }, 'aria-label': copy.zoomIn }, '+'),
-        h('button', { type: 'button', onClick: function zoomOut() { panZoom.zoomOut(); }, 'aria-label': copy.zoomOut }, '−'),
-        h('button', { type: 'button', onClick: function fit() { panZoom.fitToScreen(); }, 'aria-label': copy.fit }, copy.fit),
+      return h('div', { className: 'icm-controls' },
+        h('div', { className: 'icm-toolbar', role: 'toolbar', 'aria-label': copy.graphControls },
+          h('button', { type: 'button', onClick: function zoomIn() { panZoom.zoomIn(); }, 'aria-label': copy.zoomIn }, '+'),
+          h('button', { type: 'button', onClick: function zoomOut() { panZoom.zoomOut(); }, 'aria-label': copy.zoomOut }, '−'),
+          h('button', { type: 'button', onClick: function fit() { panZoom.fitToScreen(); }, 'aria-label': copy.fitAriaLabel }, copy.fit),
+        ),
+        h('p', { className: 'icm-interaction-hint' },
+          h('span', { className: 'icm-interaction-hint-icon', 'aria-hidden': 'true' }, 'i'),
+          copy.interactionHint,
+        ),
       );
     }
 

@@ -10,12 +10,67 @@ test('图谱加载为可见 SVG', async ({ page }) => {
   await expect(page.locator('#fail-page')).toBeHidden();
 });
 
+test('缩放控件右侧以用户语言说明可点击图中卡片查看详情', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(demoUrl);
+  const hint = page.locator('.icm-interaction-hint');
+  await expect(hint).toContainText('Click a card for details');
+  await expect(hint.locator('.icm-interaction-hint-icon')).toHaveText('i');
+  const positions = await page.locator('.icm-controls').evaluate((controls) => {
+    const toolbar = controls.querySelector('.icm-toolbar')?.getBoundingClientRect();
+    const hintRect = controls.querySelector('.icm-interaction-hint')?.getBoundingClientRect();
+    const hint = controls.querySelector('.icm-interaction-hint');
+    if (!toolbar || !hintRect || !hint) return null;
+    const style = getComputedStyle(hint);
+    return {
+      hintAfterToolbar: hintRect.left > toolbar.right,
+      centerOffset: Math.abs((hintRect.top + hintRect.height / 2) - (toolbar.top + toolbar.height / 2)),
+      hasBorder: style.borderStyle !== 'none' && Number.parseFloat(style.borderWidth) >= 1,
+      isPill: Number.parseFloat(style.borderRadius) >= hintRect.height / 2,
+    };
+  });
+  expect(positions).not.toBeNull();
+  expect(positions.hintAfterToolbar).toBeTruthy();
+  expect(positions.centerOffset).toBeLessThanOrEqual(1);
+  expect(positions.hasBorder).toBeTruthy();
+  expect(positions.isPill).toBeTruthy();
+});
+
 test('点击节点会打开详情面板', async ({ page }) => {
   await page.goto(demoUrl);
   await page.locator('g.node[data-node-id="n1"]').click();
   await expect(page.locator('#detail-panel')).toBeVisible();
   await expect(page.locator('#detail-panel')).toContainText('Create order');
   await expect(page.locator('#detail-panel .claim-state')).toHaveText('verified');
+});
+
+test('选中的卡片保持与 hover 完全一致的反馈样式', async ({ page }) => {
+  await page.goto(demoUrl);
+  const node = page.locator('g.node[data-node-id="n1"]');
+  const readVisual = () => node.evaluate((element) => {
+    const rect = element.querySelector('rect');
+    if (!rect) return null;
+    const style = getComputedStyle(rect);
+    return {
+      stroke: style.stroke,
+      strokeWidth: style.strokeWidth,
+      filter: style.filter,
+    };
+  });
+
+  await node.hover();
+  await expect.poll(async () => (await readVisual())?.strokeWidth).toBe('4px');
+  const hoverVisual = await readVisual();
+  expect(hoverVisual).not.toBeNull();
+
+  await page.locator('.icm-toolbar').hover();
+  await node.click();
+  await page.locator('.icm-toolbar').hover();
+  await expect(node).toHaveClass(/icm-node-selected/);
+  await expect.poll(readVisual).toEqual(hoverVisual);
+
+  await page.locator('#detail-panel button[aria-label="Close detail"]').click();
+  await expect(node).not.toHaveClass(/icm-node-selected/);
 });
 
 test('复杂 Demo 的代表节点详情包含目标产物同量级的结构化信息', async ({ page }) => {
