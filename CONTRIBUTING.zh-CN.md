@@ -35,6 +35,7 @@ npm run test:browser
 - 保持可安装的 `skill/` 目录自包含。`tests/` 与 `examples/` 用于开发和验证，不是已安装 skill 的运行时依赖。
 - 修改 MapSpec 或校验逻辑时，同时更新可执行 Schema、共享校验器、构建规则及聚焦的正向或负向测试。
 - 修改渲染器或可视行为时，先补聚焦的浏览器回归，再修复；若受影响，同步重新生成已提交 demo，并运行完整的相关测试集。
+- 修改 CDN profile 时，同时更新批准来源顺序和 SRI 断言，并保持浏览器 fixture 会用锁定的本地 UMD 字节校验每个 profile 来源。不得加入未验证的 CDN 来源。
 - 保留证据模型：断言必须标记为 `verified`、`inferred` 或 `unconfirmed`；`verified` 证据必须可追溯到已检查的相对路径和行范围。
 - 保持 `README.md` 与 `README.zh-CN.md` 语义一致。`SKILL.md` 是唯一可执行 skill 入口；中文文件仅为阅读译本，不得添加发现用 frontmatter。
 

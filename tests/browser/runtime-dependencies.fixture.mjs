@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ALL_DEPS } from '../../skill/renderer/deps.config.mjs';
+import { CDN_PROFILES } from '../../skill/renderer/deps.config.mjs';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const localAssets = {
@@ -21,18 +21,20 @@ function sha384(body) {
 }
 
 const localRuntimeSources = new Map();
-for (const dependency of ALL_DEPS) {
-  const asset = localAssets[dependency.name];
-  if (!asset) {
-    throw new Error(`缺少 ${dependency.name} 的本地浏览器测试镜像`);
-  }
-  const body = readFileSync(path.resolve(projectRoot, asset));
-  const integrity = sha384(body);
-  for (const source of dependency.sources) {
-    if (source.integrity !== integrity) {
-      throw new Error(`本地 ${dependency.name} 字节与 ${source.url} 的 SRI 不一致`);
+for (const [profileName, dependencies] of Object.entries(CDN_PROFILES)) {
+  for (const dependency of dependencies) {
+    const asset = localAssets[dependency.name];
+    if (!asset) {
+      throw new Error(`缺少 ${dependency.name} 的本地浏览器测试镜像`);
     }
-    localRuntimeSources.set(source.url, body);
+    const body = readFileSync(path.resolve(projectRoot, asset));
+    const integrity = sha384(body);
+    for (const source of dependency.sources) {
+      if (source.integrity !== integrity) {
+        throw new Error(`${profileName} 的本地 ${dependency.name} 字节与 ${source.url} 的 SRI 不一致`);
+      }
+      localRuntimeSources.set(source.url, body);
+    }
   }
 }
 

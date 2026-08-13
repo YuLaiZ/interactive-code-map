@@ -48,6 +48,9 @@ agreement first.
 - For renderer or visual behavior changes, add a focused browser regression
   before the fix, regenerate the checked-in demo when it is affected, and run
   the full relevant test suite.
+- For CDN profile changes, update the approved source order and SRI assertions,
+  and keep browser fixtures verifying every profile source against the locked
+  local UMD bytes. Never add an unverified CDN source.
 - Preserve the evidence model: claims must remain `verified`, `inferred`, or
   `unconfirmed`, and verified evidence must be traceable to inspected relative
   paths and line ranges.

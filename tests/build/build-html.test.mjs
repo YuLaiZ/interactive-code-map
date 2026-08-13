@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderHtml } from '../../skill/renderer/build-html.mjs';
+import { CDN_PROFILES } from '../../skill/renderer/deps.config.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
@@ -125,6 +126,31 @@ console.log('\n== 校验失败时不生成 ==');
     threw = true;
   }
   assert(threw, 'schemaVersion 非法 → renderHtml 抛错');
+}
+
+console.log('\n== CDN profile 注入 ==');
+{
+  const tmp = mkdtempSync(path.join(tmpdir(), 'icm-cdn-profile-'));
+  try {
+    writeEvidenceFile(tmp);
+    const html = renderHtml(baseSpec(), { repoRoot: tmp, cdnProfile: 'china-friendly' });
+    const depsMatch = html.match(/window\.__ICM_DEPS_CONFIG__ = (\[[\s\S]*?\]);/);
+    const embedded = depsMatch ? JSON.parse(depsMatch[1]) : null;
+    assert(JSON.stringify(embedded) === JSON.stringify(CDN_PROFILES['china-friendly']), 'china-friendly profile 被完整注入 HTML');
+    assert(html.includes('cdn.staticfile.org/react/18.3.1'), 'china-friendly React 首源写入 HTML');
+    assert(html.includes('cdn.bootcdn.net/ajax/libs/react/18.3.1'), 'china-friendly React 末位回退写入 HTML');
+    const defaultHtml = renderHtml(baseSpec(), { repoRoot: tmp });
+    assert(!defaultHtml.includes('cdn.staticfile.org/react/18.3.1'), '默认 global profile 不注入 china-friendly 来源');
+    let rejected = false;
+    try {
+      renderHtml(baseSpec(), { repoRoot: tmp, cdnProfile: 'fastest' });
+    } catch (error) {
+      rejected = error.message.includes('未知 CDN profile');
+    }
+    assert(rejected, 'renderHtml 拒绝未知 CDN profile');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
 }
 
 console.log('\n== CLI ① --in/--out 同一文件拒绝 ==');
@@ -250,6 +276,22 @@ console.log('\n== CLI ⑧ verified 真实性端到端 ==');
     assert(ok.code === 0, 'verified 文件存在且行号在范围内 → 通过');
     assert(rejected.code !== 0, 'verified 行号越界 → 拒绝');
     assert(!existsSync(path.join(tmp, 'bad.html')), '拒绝时不写产物');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n== CLI ⑨ CDN profile ==');
+{
+  const tmp = mkdtempSync(path.join(tmpdir(), 'icm-cli-cdn-profile-'));
+  try {
+    writeEvidenceFile(tmp);
+    writeFileSync(path.join(tmp, 'spec.json'), JSON.stringify(baseSpec()));
+    const selected = runCli(['--in', 'spec.json', '--out', 'cn.html', '--repo-root', tmp, '--cdn-profile', 'china-friendly'], tmp);
+    const selectedHtml = readFileSync(path.join(tmp, 'cn.html'), 'utf8');
+    const rejected = runCli(['--in', 'spec.json', '--out', 'bad.html', '--repo-root', tmp, '--cdn-profile', 'fastest'], tmp);
+    assert(selected.code === 0 && selectedHtml.includes('cdn.staticfile.org/react/18.3.1'), '--cdn-profile china-friendly 生成对应 HTML');
+    assert(rejected.code !== 0 && !existsSync(path.join(tmp, 'bad.html')), '未知 --cdn-profile 拒绝且不写产物');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

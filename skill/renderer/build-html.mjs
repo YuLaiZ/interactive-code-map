@@ -24,7 +24,7 @@ import {
   isSensitivePath,
   validateMapSpec,
 } from './validate-map-spec.mjs';
-import { ALL_DEPS } from './deps.config.mjs';
+import { DEFAULT_CDN_PROFILE, resolveDependencyProfile } from './deps.config.mjs';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const template = readFileSync(path.join(directory, 'template.html'), 'utf8');
@@ -103,6 +103,7 @@ export function renderHtml(mapSpec, options = {}) {
     allowTestFixture = false,
     fixtureFilePath = null,
     fixtureRoots = null,
+    cdnProfile = DEFAULT_CDN_PROFILE,
   } = options;
   const errors = validateMapSpec(mapSpec, {
     repoRoot,
@@ -113,6 +114,7 @@ export function renderHtml(mapSpec, options = {}) {
   if (errors.length > 0) {
     throw new Error(`MapSpec 校验失败:\n  - ${errors.join('\n  - ')}`);
   }
+  const dependencies = resolveDependencyProfile(cdnProfile);
 
   const rendererScript = [
     stripModuleSyntax(encoderSource, 'mermaid-encoder.mjs'),
@@ -125,7 +127,7 @@ export function renderHtml(mapSpec, options = {}) {
   html = replaceToken(html, '__ICM_STYLES_CSS__', safeForStyle(styles));
   html = replaceToken(html, '__ICM_RENDER_JS__', safeForScript(rendererScript));
   html = replaceToken(html, '__ICM_MAPSPEC_JSON__', safeForScript(JSON.stringify(mapSpec)));
-  html = replaceToken(html, '__ICM_DEPS_CONFIG_JSON__', safeForScript(JSON.stringify(ALL_DEPS)));
+  html = replaceToken(html, '__ICM_DEPS_CONFIG_JSON__', safeForScript(JSON.stringify(dependencies)));
 
   if (isSensitiveContent(html) || isSensitivePath(html) || containsAbsoluteFilesystemPath(html)) {
     throw new Error('生成 HTML 含敏感内容或绝对文件系统路径，请修正 MapSpec 或 renderer 源码');
@@ -139,6 +141,7 @@ function parseArgs(argv) {
     input: null,
     output: null,
     repoRoot: null,
+    cdnProfile: DEFAULT_CDN_PROFILE,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -150,12 +153,14 @@ function parseArgs(argv) {
       args.repoRoot = argv[++index];
     } else if (argument === '--allow-test-fixture') {
       args.allowTestFixture = true;
+    } else if (argument === '--cdn-profile') {
+      args.cdnProfile = argv[++index];
     } else {
       throw new Error(`未知参数: ${argument}`);
     }
   }
   if (!args.input || !args.output || !args.repoRoot) {
-    throw new Error('用法: node build-html.mjs --in <mapspec> --out <relative-html> --repo-root <root> [--allow-test-fixture]');
+    throw new Error('用法: node build-html.mjs --in <mapspec> --out <relative-html> --repo-root <root> [--cdn-profile global|china-friendly] [--allow-test-fixture]');
   }
   return args;
 }
@@ -228,7 +233,7 @@ function main() {
     }
 
     const mapSpec = JSON.parse(readFileSync(inputPath, 'utf8'));
-    const options = { repoRoot: rootPath };
+    const options = { repoRoot: rootPath, cdnProfile: args.cdnProfile };
     if (args.allowTestFixture) {
       options.allowTestFixture = true;
       options.fixtureFilePath = realpathSync(inputPath);
@@ -236,7 +241,7 @@ function main() {
     }
     const html = renderHtml(mapSpec, options);
     createTemporaryOutput(outputPath, html);
-    console.log(`生成: ${args.output}`);
+    console.log(`生成: ${args.output}（CDN profile: ${args.cdnProfile}）`);
   } catch (error) {
     console.error(`错误: ${error.message}`);
     process.exitCode = 1;

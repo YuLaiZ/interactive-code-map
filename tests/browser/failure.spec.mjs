@@ -1,10 +1,13 @@
 import { test, expect } from './runtime-dependencies.fixture.mjs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { ALL_DEPS } from '../../skill/renderer/deps.config.mjs';
+import { renderHtml } from '../../skill/renderer/build-html.mjs';
+import { ALL_DEPS, CDN_PROFILES, CDN_SOURCE_TIMEOUT_MS } from '../../skill/renderer/deps.config.mjs';
 
 const demoPath = path.resolve('examples/demo/expected-output.html');
 const demoUrl = pathToFileURL(demoPath).href;
+const demoMapSpec = JSON.parse(readFileSync('examples/demo/expected-mapspec.json', 'utf8'));
 const reactSources = ALL_DEPS.find((dependency) => dependency.name === 'react').sources;
 
 function tamperedResponse(route, code) {
@@ -46,6 +49,91 @@ function captureDependencyRequests(page) {
   });
   return requests;
 }
+
+function renderChinaFriendlyHtml(firstSourceTimeoutMs = CDN_SOURCE_TIMEOUT_MS) {
+  const html = renderHtml(demoMapSpec, {
+    repoRoot: path.resolve('examples/demo/sample-repo'),
+    cdnProfile: 'china-friendly',
+  });
+  return html.replace(`"timeoutMs":${CDN_SOURCE_TIMEOUT_MS}`, `"timeoutMs":${firstSourceTimeoutMs}`);
+}
+
+async function delayedResponse(route) {
+  await new Promise((resolve) => setTimeout(resolve, 1_500));
+  try {
+    await route.fulfill({
+      body: 'window.__delayedSource = true;',
+      contentType: 'application/javascript',
+      headers: { 'access-control-allow-origin': '*' },
+    });
+  } catch {
+    // 超时移除 script 会取消请求；此时无需再响应该 route。
+  }
+}
+
+test('大陆友好 profile 使用指定首源并保持图谱可用', async ({ page }) => {
+  const profile = CDN_PROFILES['china-friendly'];
+  const dependencyUrls = new Set(profile.flatMap((dependency) => dependency.sources.map((source) => source.url)));
+  const requests = [];
+  page.on('request', (request) => {
+    if (dependencyUrls.has(request.url())) requests.push(request.url());
+  });
+
+  const html = renderChinaFriendlyHtml();
+  await page.setContent(html, { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('svg')).toBeVisible();
+  await expect(page.locator('#fail-page')).toBeHidden();
+  expect(requests).toEqual(profile.map((dependency) => dependency.sources[0].url));
+});
+
+test('大陆友好 profile 的首源超时会回退到 jsDelivr', async ({ page }) => {
+  const profile = CDN_PROFILES['china-friendly'];
+  const dependencyUrls = new Set(profile.flatMap((dependency) => dependency.sources.map((source) => source.url)));
+  const requests = [];
+  const warnings = [];
+  page.on('request', (request) => {
+    if (dependencyUrls.has(request.url())) requests.push(request.url());
+  });
+  page.on('console', (message) => {
+    if (message.type() === 'warning') warnings.push(message.text());
+  });
+  await page.route(profile[0].sources[0].url, delayedResponse);
+
+  await page.setContent(renderChinaFriendlyHtml(1_000), { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('svg')).toBeVisible();
+  await expect(page.locator('#fail-page')).toBeHidden();
+  expect(warnings.some((text) => text.includes('加载超时(1000ms)'))).toBeTruthy();
+  expect(requests).toEqual([
+    profile[0].sources[0].url,
+    profile[0].sources[1].url,
+    profile[1].sources[0].url,
+    profile[2].sources[0].url,
+  ]);
+});
+
+test('大陆友好 profile 的前三源失败会回退到 bootcdn', async ({ page }) => {
+  const profile = CDN_PROFILES['china-friendly'];
+  const dependencyUrls = new Set(profile.flatMap((dependency) => dependency.sources.map((source) => source.url)));
+  const requests = [];
+  page.on('request', (request) => {
+    if (dependencyUrls.has(request.url())) requests.push(request.url());
+  });
+  for (const source of profile[0].sources.slice(0, 3)) {
+    await page.route(source.url, serviceUnavailableResponse);
+  }
+
+  await page.setContent(renderChinaFriendlyHtml(), { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('svg')).toBeVisible();
+  await expect(page.locator('#fail-page')).toBeHidden();
+  expect(requests).toEqual([
+    ...profile[0].sources.map((source) => source.url),
+    profile[1].sources[0].url,
+    profile[2].sources[0].url,
+  ]);
+});
 
 test('单个 CDN 的 SRI 不匹配会回退到下一源', async ({ page }) => {
   const first = reactSources[0];

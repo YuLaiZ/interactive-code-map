@@ -36,7 +36,28 @@
 node skill/renderer/build-html.mjs \
   --in path/to/mapspec.json \
   --out docs/code-map.html \
-  --repo-root path/to/repository
+  --repo-root path/to/repository \
+  --cdn-profile global
+~~~
+
+构建器会校验 MapSpec、内联应用代码和 CSS，并原子写入输出；它绝不会删除输入的 MapSpec。生成的 HTML 打开时需要联网加载固定版本的 React、ReactDOM 与 Mermaid 运行时依赖。
+
+### CDN 交付 profile
+
+- `global`（默认）：所有依赖均按 jsDelivr → unpkg 回退。
+- `china-friendly`：React 与 ReactDOM 按 staticfile → jsDelivr → unpkg → bootcdn 回退；固定版本 Mermaid 尚无通过字节一致性验证的中国大陆镜像，继续按 jsDelivr → unpkg 回退。
+
+只有用户明确偏好中国大陆访问，或明确目标受众在中国大陆时，才选择 `china-friendly`。用户语言本身不足以决定 profile；只有构建环境能代表目标用户、且用户同意联网探测时，才适合根据实际速度选择。每个已配置来源均使用 HTTPS、固定版本、SRI 校验、8 秒超时，且只作为有序回退源。
+
+生成前，Agent 会询问是否把键盘操作与小视口使用纳入本次图谱的验收范围。只有用户确认后，才承诺并验证这些能力；未选择不会阻塞图谱交付。
+
+可直接查看原创示例：[examples/demo/expected-mapspec.json](examples/demo/expected-mapspec.json)、其小型示例源目录以及 [examples/demo/expected-output.html](examples/demo/expected-output.html)。可用以下命令重新生成已提交的 HTML：
+
+~~~bash
+node skill/renderer/build-html.mjs \
+  --in examples/demo/expected-mapspec.json \
+  --out examples/demo/expected-output.html \
+  --repo-root examples/demo/sample-repo
 ~~~
 
 ## 原则
@@ -61,24 +82,11 @@ npm run test:browser
 
 `npm test` 会在已配置好的开发或 CI 环境中运行三组测试。浏览器回归应先复用 Playwright 配置可访问的现有兼容浏览器；macOS 本地可使用已安装的 Google Chrome。若没有兼容浏览器，应把 `npx playwright install chromium` 作为独立的可选安装建议，说明它会下载 Chromium，并等待用户确认后再执行。skill 的冒烟验证不会自行安装浏览器工具。
 
-构建器会校验 MapSpec、内联应用代码和 CSS，并原子写入输出；它绝不会删除输入的 MapSpec。生成的 HTML 在运行时使用固定版本、SRI 保护的 React、ReactDOM 与 Mermaid CDN 源，因此打开时需要网络。
-
-生成前，Agent 会询问是否把键盘操作与小视口使用纳入本次图谱的验收范围。只有用户确认后，才承诺并验证这些能力；未选择不会阻塞图谱交付。
-
-可直接查看原创示例：[examples/demo/expected-mapspec.json](examples/demo/expected-mapspec.json)、其小型示例源目录以及 [examples/demo/expected-output.html](examples/demo/expected-output.html)。可用以下命令重新生成已提交的 HTML：
-
-~~~bash
-node skill/renderer/build-html.mjs \
-  --in examples/demo/expected-mapspec.json \
-  --out examples/demo/expected-output.html \
-  --repo-root examples/demo/sample-repo
-~~~
-
 ## 验证
 
 - npm run test:mapspec：验证零依赖校验器以及 Schema / 校验器包含关系。
 - npm run test:build：验证 Mermaid 编码、依赖配置、构建安全和原子输出。
-- npm run test:browser：验证渲染器回归，包括图谱加载、可选的键盘与响应式能力、平移缩放、CDN/SRI 回退、子图标题避让，以及长 htmlLabels 是否落在 foreignObject 可用尺寸内。测试期间使用字节级一致、经 SRI 校验的本地 UMD 镜像；生成的 HTML 本身仍使用固定的 CDN 源。
+- npm run test:browser：验证渲染器回归，包括图谱加载、可选的键盘与响应式能力、平移缩放、CDN/SRI/超时回退、子图标题避让，以及长 htmlLabels 是否落在 foreignObject 可用尺寸内。测试期间使用字节级一致、经 SRI 校验的本地 UMD 镜像；生成的 HTML 本身仍使用固定的 CDN 源。
 
 ## 贡献
 

@@ -36,7 +36,28 @@ Create a MapSpec from inspected code, then validate its verified evidence agains
 node skill/renderer/build-html.mjs \
   --in path/to/mapspec.json \
   --out docs/code-map.html \
-  --repo-root path/to/repository
+  --repo-root path/to/repository \
+  --cdn-profile global
+~~~
+
+The builder validates the MapSpec, embeds the application code and CSS, and writes the output atomically. It never deletes the input MapSpec. The resulting HTML needs network access to load its pinned React, ReactDOM, and Mermaid runtime dependencies.
+
+### CDN delivery profiles
+
+- `global` (default): jsDelivr → unpkg for every dependency.
+- `china-friendly`: staticfile → jsDelivr → unpkg → bootcdn for React and ReactDOM; Mermaid remains jsDelivr → unpkg because no byte-identical China-mainland mirror is approved for the pinned version.
+
+Choose `china-friendly` only for an explicit China-mainland preference or audience. User language is not enough by itself; actual speed measurements are appropriate only when the build environment represents the target audience and the user agrees to network probing. Every configured source is HTTPS, version-pinned, SRI-protected, limited to 8 seconds, and used only as an ordered fallback.
+
+Before generation, the agent asks whether keyboard operation and small-viewport usability should be included in this map’s acceptance scope. They are only promised and verified after the user confirms them; unselected capabilities do not block delivery.
+
+For a runnable original example, see [examples/demo/expected-mapspec.json](examples/demo/expected-mapspec.json), its small source repository, and [examples/demo/expected-output.html](examples/demo/expected-output.html). Rebuild the checked-in HTML with:
+
+~~~bash
+node skill/renderer/build-html.mjs \
+  --in examples/demo/expected-mapspec.json \
+  --out examples/demo/expected-output.html \
+  --repo-root examples/demo/sample-repo
 ~~~
 
 ## Principles
@@ -61,24 +82,11 @@ npm run test:browser
 
 `npm test` runs all three suites in an already configured development or CI environment. For browser regression, first reuse a compatible browser already available to the Playwright configuration; on macOS this can include the installed Google Chrome binary. If no compatible browser is available, recommend `npx playwright install chromium` as a separate setup step, explain that it downloads Chromium, and wait for the user's confirmation before running it. The skill itself does not install browser tooling for a smoke check.
 
-The builder validates the MapSpec, embeds the application code and CSS, and writes the output atomically. It never deletes the input MapSpec. The resulting HTML uses pinned React, ReactDOM, and Mermaid CDN sources protected with SRI; it therefore needs network access when opened.
-
-Before generation, the agent asks whether keyboard operation and small-viewport usability should be included in this map’s acceptance scope. They are only promised and verified after the user confirms them; unselected capabilities do not block delivery.
-
-For a runnable original example, see [examples/demo/expected-mapspec.json](examples/demo/expected-mapspec.json), its small source repository, and [examples/demo/expected-output.html](examples/demo/expected-output.html). Rebuild the checked-in HTML with:
-
-~~~bash
-node skill/renderer/build-html.mjs \
-  --in examples/demo/expected-mapspec.json \
-  --out examples/demo/expected-output.html \
-  --repo-root examples/demo/sample-repo
-~~~
-
 ## Verification
 
 - npm run test:mapspec checks the zero-dependency validator and Schema/validator containment.
 - npm run test:build checks Mermaid encoding, dependency configuration, build safety, and atomic output behavior.
-- npm run test:browser checks renderer regressions, including graph loading, optional keyboard and responsive capabilities, pan/zoom, CDN/SRI fallback, subgraph-title collision repair, and long htmlLabels fitting within their foreignObject bounds. It serves byte-for-byte, SRI-verified local UMD mirrors during tests; generated HTML itself still uses the pinned CDN sources.
+- npm run test:browser checks renderer regressions, including graph loading, optional keyboard and responsive capabilities, pan/zoom, CDN/SRI/timeout fallback, subgraph-title collision repair, and long htmlLabels fitting within their foreignObject bounds. It serves byte-for-byte, SRI-verified local UMD mirrors during tests; generated HTML itself still uses the pinned CDN sources.
 
 ## Contributing
 

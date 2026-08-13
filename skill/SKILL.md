@@ -13,12 +13,13 @@ Use this skill to create a concise, evidence-backed interactive code map. It pro
 
 1. Establish the input boundary: obtain the repository directory and the question to answer. Ask for missing scope; do not infer code facts outside the supplied directory.
 2. Confirm the optional interaction profile before generating. Ask: “Should keyboard operation and small-viewport usability be included in this HTML map’s acceptance scope? (Recommended)” An explicit preference already given by the user counts as confirmation. If the user does not confirm, continue with the map but treat these capabilities as out of scope for this delivery; do not claim or test them as accepted behavior. Do not remove renderer capabilities merely because they are unselected.
-3. Inspect code only within that boundary. Mark every MapSpec claim as verified, inferred, or unconfirmed.
-4. Form a MapSpec. Use [mapspec-v1.schema.json](references/mapspec-v1.schema.json) as the authoritative structure. Every verified evidence item needs a real relative path and an inspected line range.
+3. Choose the CDN delivery profile. Default to `global`; use `china-friendly` only when the user explicitly prefers China-mainland delivery or identifies that audience. Treat conversation language as a weak signal, not a location fact. Only use a live speed measurement when the current environment represents the target audience and the user agrees to network probing. Select only a bundled profile; never add arbitrary CDN URLs or bypass SRI. Report the selected profile and rationale.
+4. Inspect code only within that boundary. Mark every MapSpec claim as verified, inferred, or unconfirmed.
+5. Form a MapSpec. Use [mapspec-v1.schema.json](references/mapspec-v1.schema.json) as the authoritative structure. Every verified evidence item needs a real relative path and an inspected line range.
    Set the optional `meta.uiLocale` deliberately for each delivered map: use `en` for the English Demo, and use `zh-CN` by default when the user is conversing in Chinese (unless they request English output). The fixed renderer UI copy—reading guide, relationship keys, condition marker, and evidence-status caption—must consistently follow this value; never leave a mixed-language legend. `languageProfile` describes the code or business source and does not select UI language. Preserve the supplied language of business node, group, and edge text; only translate business content when the user explicitly asks.
-5. Read [visual-quality-contract.md](references/visual-quality-contract.md) before generating or revising a multi-group map. Apply its relationship semantics, routing limits, label placement, locale, and visual-acceptance rules. Do not repair a complex graph by repeatedly layering ad-hoc routing changes; retain Mermaid's node-to-node corridor and make only the documented local adjustments.
-6. Validate and generate the artifact. First verify node --version is at least 20. If it is not, report that Node.js 20 or newer is required and retain the MapSpec for the user instead of attempting generation.
-7. Report the generated relative HTML path, the evidence-state limits, the confirmed interaction profile, and any manual browser verification performed. Do not report browser behavior as verified unless it was actually checked.
+6. Read [visual-quality-contract.md](references/visual-quality-contract.md) before generating or revising a multi-group map. Apply its relationship semantics, routing limits, label placement, locale, and visual-acceptance rules. Do not repair a complex graph by repeatedly layering ad-hoc routing changes; retain Mermaid's node-to-node corridor and make only the documented local adjustments.
+7. Validate and generate the artifact. First verify node --version is at least 20. If it is not, report that Node.js 20 or newer is required and retain the MapSpec for the user instead of attempting generation.
+8. Report the generated relative HTML path, the evidence-state limits, the confirmed interaction and CDN profiles, and any manual browser verification performed. Do not report browser behavior as verified unless it was actually checked.
 
 ## Generation
 
@@ -28,10 +29,13 @@ Resolve <skill-root> from the SKILL.md file you read for this invocation. Do not
 node "<skill-root>/renderer/build-html.mjs" \
   --in <mapspec.json> \
   --out <relative-output.html> \
-  --repo-root <repository-root>
+  --repo-root <repository-root> \
+  --cdn-profile <global|china-friendly>
 ~~~
 
 build-html.mjs resolves its own renderer assets using import.meta.url, so the command may run from any current working directory.
+
+`global` uses jsDelivr → unpkg for every dependency. `china-friendly` follows the verified V2.1.4-inspired order for React and ReactDOM: staticfile → jsDelivr → unpkg → bootcdn. Mermaid remains jsDelivr → unpkg because no byte-identical China-mainland mirror is approved for the pinned version. All sources are version-pinned, SRI-protected, limited to 8 seconds each, and fail closed after ordered fallback.
 
 Create a temporary MapSpec with exclusive creation semantics when the environment supports it. The build command never deletes --in; after a successful build, only delete the exact temporary MapSpec that this invocation created. Never delete a user-supplied MapSpec.
 

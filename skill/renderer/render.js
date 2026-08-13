@@ -89,19 +89,39 @@
         reject(new Error('依赖源缺少 URL、SRI 或匿名跨域配置'));
         return;
       }
+      if (!Number.isSafeInteger(source.timeoutMs) || source.timeoutMs < 1_000 || source.timeoutMs > 30_000) {
+        reject(new Error('依赖源超时配置无效'));
+        return;
+      }
       const script = document.createElement('script');
+      let settled = false;
+      let timeoutId = null;
+      function cleanup(removeScript) {
+        if (timeoutId !== null) window.clearTimeout(timeoutId);
+        script.onload = null;
+        script.onerror = null;
+        if (removeScript) script.remove();
+      }
+      function succeed() {
+        if (settled) return;
+        settled = true;
+        cleanup(false);
+        resolve();
+      }
+      function fail(message) {
+        if (settled) return;
+        settled = true;
+        cleanup(true);
+        reject(new Error(message));
+      }
       script.src = source.url;
       script.integrity = source.integrity;
       script.crossOrigin = source.crossorigin;
-      script.onload = function onLoad() {
-        script.onload = null;
-        script.onerror = null;
-        resolve();
-      };
-      script.onerror = function onError() {
-        script.remove();
-        reject(new Error('网络或 SRI 校验失败'));
-      };
+      script.onload = succeed;
+      script.onerror = function onError() { fail('网络或 SRI 校验失败'); };
+      timeoutId = window.setTimeout(function onTimeout() {
+        fail('加载超时(' + source.timeoutMs + 'ms)');
+      }, source.timeoutMs);
       document.head.appendChild(script);
     });
   }

@@ -259,7 +259,8 @@ test.describe('子图标题防遮挡', () => {
       expect(result.viewBoxAfter).toBe(result.viewBoxBefore);
       expect(result.titles.length).toBeGreaterThanOrEqual(2);
       expect(result.titles.every((title) => title.within && title.centerDelta <= 1
-        && title.gapToFirstNode >= 12)).toBeTruthy();
+        // getBoundingClientRect() 会在 SVG/CSS 像素换算时产生微小浮点误差。
+        && title.gapToFirstNode >= 11.99)).toBeTruthy();
       for (const before of result.before) {
         const after = result.after.find((entry) => entry.id === before.id);
         expect(Math.hypot(after.x - before.x, after.y - before.y)).toBeLessThanOrEqual(1);
