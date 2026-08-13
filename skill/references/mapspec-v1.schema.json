@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interactive-code-map/schemas/mapspec-v1.schema.json",
+  "title": "MapSpec v1",
+  "description": "Intermediate data model consumed by build-html.mjs and render.js. Authoritative definition; conflicts with prose resolved in favor of this schema.",
+  "type": "object",
+  "required": ["schemaVersion", "meta", "nodes"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Top-level only. Fixed to 1 for first version."
+    },
+    "meta": {
+      "$ref": "#/$defs/meta"
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "description": "Hard cap 100; soft cap 60 (skill prompts user to narrow scope above soft cap).",
+      "items": { "$ref": "#/$defs/node" }
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/edge" }
+    }
+  },
+  "$defs": {
+    "claimState": {
+      "type": "string",
+      "enum": ["verified", "inferred", "unconfirmed"],
+      "description": "Assertion-level state for a node/edge. verified requires ALL evidence.state=verified and >=1 code location; inferred has mixed evidence or strong-but-unproven; unconfirmed has no verified evidence."
+    },
+    "evidenceState": {
+      "type": "string",
+      "enum": ["verified", "inferred", "unconfirmed"],
+      "description": "Per-evidence state."
+    },
+    "meta": {
+      "type": "object",
+      "required": ["title", "question", "scope", "languageProfile", "summary"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "question": { "type": "string", "minLength": 1 },
+        "scope": { "type": "string", "minLength": 1 },
+        "languageProfile": { "type": "string", "minLength": 1 },
+        "uiLocale": {
+          "type": "string",
+          "enum": ["en", "zh-CN"],
+          "description": "Optional fixed renderer UI locale. Use the conversation/output locale; default to English when omitted."
+        },
+        "summary": { "type": "string", "minLength": 1, "description": "Panorama summary. Non-empty (v3.2.14: aligned with validator and design intent)." },
+        "layoutDirection": {
+          "type": "string",
+          "enum": ["TD", "LR"],
+          "description": "Optional macro flow direction. TD is the default; LR is for business flows whose main stages should progress left to right."
+        },
+        "layoutBands": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Optional semantic phase bands for a balanced multi-row business flow. Each node subgraph must appear in exactly one band. Bands use the outer TD direction; their own direction controls the left/right reading order.",
+          "items": { "$ref": "#/$defs/layoutBand" }
+        }
+      }
+    },
+    "layoutBand": {
+      "type": "object",
+      "required": ["title", "direction", "subgraphs"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "direction": { "type": "string", "enum": ["LR", "RL"] },
+        "subgraphs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "title", "claimState", "evidence", "detail"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+          "description": "Stable id, usable as Mermaid node id, globally unique."
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "category": { "type": "string" },
+        "subgraph": { "type": "string" },
+        "claimState": { "$ref": "#/$defs/claimState" },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/evidence" }
+        },
+        "detail": { "$ref": "#/$defs/detail" }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["from", "to", "claimState", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "label": { "type": "string" },
+        "labelKind": {
+          "type": "string",
+          "enum": ["action", "condition"],
+          "description": "Optional relationship-label semantics. action is the default; condition renders as a condition badge rather than a directional action label."
+        },
+        "claimState": { "$ref": "#/$defs/claimState" },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/evidence" }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["path", "state"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "state": { "const": "verified" } }, "required": ["state"] },
+          "then": {
+            "type": "object",
+            "required": ["path", "lineStart", "lineEnd", "state"],
+            "additionalProperties": false,
+            "properties": {
+              "path": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!\\\\)(?![A-Za-z]:[\\\\/]).+$" },
+              "lineStart": { "type": "integer", "minimum": 1 },
+              "lineEnd": { "type": "integer", "minimum": 1 },
+              "symbol": { "type": "string" },
+              "note": { "type": "string" },
+              "state": { "$ref": "#/$defs/evidenceState" }
+            },
+            "description": "verified evidence must carry a concrete code location with line range."
+          }
+        }
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!\\\\)(?![A-Za-z]:[\\\\/]).+$",
+          "description": "Relative path only. Regex rejects: empty, absolute (/), drive letters (C:\\), UNC (\\\\). Segment-level rules (no '..' or '.' segments, no backslashes anywhere) and acceptance test vectors live in mapspec-v1.build-rules.json, enforced by build-html.mjs unit tests (not by JSON Schema).",
+          "$comment": "Schema intentionally stays clean of custom keywords so ajv strict mode compiles it without 'unknown keyword' errors. Segment-level path rejection cannot be expressed in regex; see mapspec-v1.build-rules.json pathValidation.acceptanceTestVectors."
+        },
+        "lineStart": { "type": "integer", "minimum": 1 },
+        "lineEnd": { "type": "integer", "minimum": 1 },
+        "symbol": { "type": "string" },
+        "note": { "type": "string" },
+        "state": { "$ref": "#/$defs/evidenceState" }
+      },
+      "$comment": "lineEnd>=lineStart enforcement and path segment checks live in mapspec-v1.build-rules.json, enforced by build-html.mjs (not JSON Schema)."
+    },
+    "detail": {
+      "type": "object",
+      "required": ["summary", "segments"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "segments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/segment" }
+        }
+      }
+    },
+    "segment": {
+      "type": "object",
+      "required": ["kind", "title", "headers", "rows"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["value", "schema", "code"] },
+        "title": { "type": "string", "minLength": 1 },
+        "subtitle": { "type": "string" },
+        "headers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "code" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "rows": {
+                "type": "array",
+                "maxItems": 80,
+                "items": {
+                  "type": "array",
+                  "items": { "type": "string", "maxLength": 500 }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "$comment": "Code excerpt caps: at most 80 rows and 500 characters per cell. The 12,000-character per-segment total is enforced by the zero-dependency runtime validator because JSON Schema cannot sum nested string lengths."
+    }
+  }
+}

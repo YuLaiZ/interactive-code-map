@@ -1,0 +1,935 @@
+:root {
+  color-scheme: dark;
+  --icm-background: #07111f;
+  --icm-surface: #111d30;
+  --icm-surface-muted: #182840;
+  --icm-text: #eef5ff;
+  --icm-text-muted: #aabbd0;
+  --icm-border: #2e4968;
+  --icm-accent: #71adff;
+  --icm-accent-contrast: #07111f;
+  --icm-verified: #42d691;
+  --icm-inferred: #ffc15a;
+  --icm-unconfirmed: #ff7c7c;
+  --icm-graph-line: #6e89aa;
+  --icm-edge-label-surface: #14253a;
+  --icm-node-surface: #172940;
+  --icm-node-border: #5f82a5;
+  --icm-cluster-surface: #0d1b2e;
+  --icm-cluster-border: #345675;
+  --icm-radius: 14px;
+  --icm-shadow: 0 22px 48px rgb(0 0 0 / 34%);
+  --icm-space-xs: 4px;
+  --icm-space-sm: 8px;
+  --icm-space-md: 16px;
+  --icm-space-lg: 24px;
+}
+
+@property --icm-condition-border-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 8%, rgb(34 93 161 / 28%), transparent 32rem),
+    radial-gradient(circle at 88% 92%, rgb(79 45 132 / 18%), transparent 30rem),
+    var(--icm-background);
+  color: var(--icm-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select,
+textarea { font: inherit; }
+
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--icm-accent) 55%, white);
+  outline-offset: 3px;
+}
+
+#root {
+  position: relative;
+  display: flex;
+  height: 100vh;
+}
+
+#graph-viewport {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+  background-image:
+    linear-gradient(rgb(112 151 191 / 7%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(112 151 191 / 7%) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+#graph-canvas {
+  transform-origin: 0 0;
+  will-change: transform;
+  /* 画布拖拽用于平移，不应触发浏览器的文字选择。详情面板没有继承这条规则，
+   * 因而其中的代码、表格和证据仍可正常选择与复制。 */
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+/* SVG 的 foreignObject 有自己的 HTML 文本层，需显式覆盖每一层，不能只依赖
+ * 画布父元素的继承。 */
+#graph-canvas * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+#graph-canvas > svg {
+  display: block;
+  max-width: none;
+}
+
+#graph-canvas svg .node rect {
+  fill: var(--icm-node-surface) !important;
+  stroke: var(--icm-node-border) !important;
+  stroke-width: 1.75px !important;
+  rx: 12px;
+  ry: 12px;
+  transition: filter 140ms ease, stroke-width 140ms ease;
+}
+
+#graph-canvas svg .node .label,
+#graph-canvas svg .node .label p,
+#graph-canvas svg .node .nodeLabel,
+#graph-canvas svg .node .nodeLabel p {
+  color: var(--icm-text) !important;
+  fill: var(--icm-text) !important;
+}
+
+#graph-canvas svg .node .label p,
+#graph-canvas svg .node .nodeLabel p {
+  margin: 0;
+  font-weight: 650;
+  line-height: 1.38;
+}
+
+/* 分组色只表达“属于哪个业务阶段”；证据状态仍由绿/黄/红边框表达。 */
+#graph-canvas svg g.node.icm-subgraph-tone-1 rect { fill: #183e69 !important; }
+#graph-canvas svg g.node.icm-subgraph-tone-2 rect { fill: #12474c !important; }
+#graph-canvas svg g.node.icm-subgraph-tone-3 rect { fill: #30275e !important; }
+#graph-canvas svg g.node.icm-subgraph-tone-4 rect { fill: #462a5c !important; }
+#graph-canvas svg g.node.icm-subgraph-tone-5 rect { fill: #1d485b !important; }
+#graph-canvas svg g.node.icm-subgraph-tone-6 rect { fill: #2b3e5b !important; }
+
+#graph-canvas svg .cluster rect {
+  /* 分组只界定业务范围，不应像一张实体卡片压过节点和关系。 */
+  fill: #0b1829 !important;
+  stroke: var(--icm-cluster-border) !important;
+  stroke-width: 1px !important;
+  stroke-dasharray: 6 7;
+  rx: 18px;
+  ry: 18px;
+}
+
+#graph-canvas svg .cluster.icm-subgraph-tone-1 rect { fill: #0b1f33 !important; stroke: #4c7eaa !important; }
+#graph-canvas svg .cluster.icm-subgraph-tone-2 rect { fill: #092325 !important; stroke: #4d8a8d !important; }
+#graph-canvas svg .cluster.icm-subgraph-tone-3 rect { fill: #1d1935 !important; stroke: #766cb0 !important; }
+#graph-canvas svg .cluster.icm-subgraph-tone-4 rect { fill: #291a31 !important; stroke: #946da8 !important; }
+#graph-canvas svg .cluster.icm-subgraph-tone-5 rect { fill: #0d2730 !important; stroke: #5b8fa1 !important; }
+#graph-canvas svg .cluster.icm-subgraph-tone-6 rect { fill: #182433 !important; stroke: #7089a8 !important; }
+
+/* 阶段带是有业务语义的上层容器，不与节点或具体分组争夺视觉权重。它只负责
+ * 把一张大图组织为可扫描的两三行，具体业务分组仍使用彩色阶段页签。 */
+#graph-canvas svg .cluster[data-icm-layout-band] > rect {
+  fill: #0a1a2c !important;
+  stroke: #365d80 !important;
+  stroke-width: 1.35px !important;
+  stroke-dasharray: none !important;
+  rx: 22px;
+  ry: 22px;
+}
+
+#graph-canvas svg .cluster-label[data-icm-layout-band] foreignObject > div {
+  display: inline-flex !important;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border: 1px solid #48779e;
+  border-radius: 999px;
+  color: #b9dcf7 !important;
+  background: #102d47 !important;
+  font-size: 0.78em;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  line-height: 1.1 !important;
+  text-transform: uppercase;
+  white-space: nowrap !important;
+  text-shadow: none;
+}
+
+#graph-canvas svg .cluster-label[data-icm-layout-band] p {
+  margin: 0 !important;
+}
+
+#graph-canvas svg .edgePath .path,
+#graph-canvas svg .flowchart-link {
+  stroke: var(--icm-graph-line) !important;
+  stroke-width: 1.75px !important;
+  transition: stroke 150ms ease, stroke-width 150ms ease, filter 150ms ease;
+}
+
+/* 条件线和条件框共享同一个悬停态：无论鼠标落在线上还是文字上，都让读者立即
+ * 看出“这一个条件，属于这一条线”。命中带透明且不参与画面绘制，只扩大细线的
+ * 可操作区域。 */
+#graph-canvas svg .icm-edge-hit-target {
+  pointer-events: stroke !important;
+  cursor: pointer;
+}
+
+#graph-canvas svg .icm-edge-path {
+  pointer-events: stroke !important;
+  cursor: pointer;
+}
+
+#graph-canvas svg .icm-edge-path.icm-edge-hovered {
+  stroke: #d4f7ff !important;
+  stroke-width: 3.35px !important;
+  stroke-dasharray: 10 5;
+  filter: drop-shadow(0 0 4px rgb(111 201 255 / 86%));
+  animation: icm-edge-flow 740ms linear infinite;
+}
+
+#graph-canvas svg .edgeLabel[data-icm-edge-id] {
+  cursor: pointer;
+}
+
+#graph-canvas svg .edgeLabel.icm-action-edge-label.icm-edge-hovered foreignObject > div,
+#graph-canvas svg .edgeLabel.icm-condition-edge-label.icm-edge-hovered foreignObject > div {
+  --icm-condition-border-angle: 0deg;
+  border-color: #d7f8ff;
+  /* 不再缩放条件框：密集区域会因为左右净空被吃掉而产生新的遮挡。内层深色面
+   * 保持不动，外层高对比描边沿胶囊边界循环，表达与关系线一致的“正在被定位”。 */
+  background:
+    linear-gradient(#0d263e, #0d263e) padding-box,
+    conic-gradient(from var(--icm-condition-border-angle), #5f9fd1 0deg 42deg, #76d8ff 55deg 78deg, #ffffff 88deg 116deg, #76d8ff 126deg 148deg, #5f9fd1 164deg 222deg, #76d8ff 237deg 260deg, #ffffff 270deg 296deg, #76d8ff 306deg 328deg, #5f9fd1 340deg 360deg) border-box !important;
+  outline: 1px solid rgb(137 219 255 / 72%);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 2px rgb(7 17 31 / 86%), 0 0 18px rgb(91 186 255 / 82%);
+  animation: icm-condition-label-border-flow 650ms linear infinite;
+}
+
+/* 跨组标签由自己的圆角 foreignObject 胶囊承担底色；Mermaid 附带的 labelBkg 是
+ * 直角矩形，必须隐藏，避免在高亮时露出一块方形底板。 */
+#graph-canvas svg .edgeLabel.icm-action-edge-label rect.labelBkg,
+#graph-canvas svg .edgeLabel.icm-condition-edge-label rect.labelBkg {
+  opacity: 0 !important;
+}
+
+#graph-canvas svg .icm-edge-hover-outline-layer {
+  pointer-events: none;
+}
+
+#graph-canvas svg .icm-edge-hover-outline-glow {
+  fill: none;
+  stroke: #6bd6ff;
+  stroke-width: 4px;
+  opacity: 0.68;
+  filter: drop-shadow(0 0 5px rgb(98 214 255 / 92%));
+}
+
+#graph-canvas svg .icm-edge-hover-outline-flow {
+  fill: none;
+  stroke: #f1fdff;
+  stroke-width: 1.65px;
+  stroke-dasharray: 11 6;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 2px rgb(255 255 255 / 92%));
+  animation: icm-edge-flow 560ms linear infinite;
+}
+
+/* Mermaid 会为普通组内文字生成一个矩形 labelBkg；跨组的条件/动作则已有自己的
+ * foreignObject 胶囊。不能把前者的矩形高亮套到后者上，否则会盖住圆角外轮廓。 */
+#graph-canvas svg .edgeLabel.icm-edge-hovered:not(.icm-action-edge-label):not(.icm-condition-edge-label) rect.labelBkg {
+  fill: #163d5e !important;
+  stroke: #c9f4ff !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 7 4;
+  filter: drop-shadow(0 0 4px rgb(111 201 255 / 72%));
+  animation: icm-edge-flow 740ms linear infinite;
+}
+
+#graph-canvas svg .icm-edge-label-leader.icm-edge-hovered {
+  stroke: #d4f5ff;
+  stroke-width: 2.35px;
+  animation: icm-edge-flow 740ms linear infinite;
+}
+
+#graph-canvas svg .icm-edge-label-anchor-dot.icm-edge-hovered {
+  fill: #fff;
+  filter: drop-shadow(0 0 3px rgb(111 201 255 / 82%));
+}
+
+@keyframes icm-edge-flow {
+  to { stroke-dashoffset: -13; }
+}
+
+@keyframes icm-condition-label-border-flow {
+  to { --icm-condition-border-angle: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #graph-canvas svg .icm-edge-path.icm-edge-hovered,
+  #graph-canvas svg .edgeLabel.icm-action-edge-label.icm-edge-hovered foreignObject > div,
+  #graph-canvas svg .edgeLabel.icm-condition-edge-label.icm-condition-edge-hovered foreignObject > div,
+  #graph-canvas svg .edgeLabel.icm-edge-hovered:not(.icm-action-edge-label):not(.icm-condition-edge-label) rect.labelBkg,
+  #graph-canvas svg .icm-edge-label-leader.icm-edge-hovered {
+    animation: none;
+  }
+
+  #graph-canvas svg .icm-edge-hover-outline-flow {
+    animation: none;
+  }
+}
+
+#graph-canvas svg marker path {
+  fill: var(--icm-graph-line) !important;
+  stroke: var(--icm-graph-line) !important;
+}
+
+/* 跨分组关系以一条连续的节点到节点路径绘制，置于分组填充上方。原始 Mermaid
+ * 避障通道会被简化并圆角化，节点附近只做局部接入，避免分组边界把一条关系切碎。 */
+#graph-canvas svg .icm-handoff-node-path-layer {
+  pointer-events: none;
+}
+
+#graph-canvas svg .icm-handoff-node-path-layer path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#graph-canvas svg .cluster-label text {
+  fill: var(--icm-text) !important;
+}
+
+#graph-canvas svg .cluster-label span,
+#graph-canvas svg .cluster-label span p {
+  color: var(--icm-text) !important;
+}
+
+#graph-canvas svg .edgeLabel,
+#graph-canvas svg .edgeLabel p,
+#graph-canvas svg .edgeLabel span {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: var(--icm-text) !important;
+  fill: var(--icm-text) !important;
+  font-weight: 750 !important;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+}
+
+#graph-canvas svg rect.labelBkg {
+  color: var(--icm-text) !important;
+  background: var(--icm-edge-label-surface) !important;
+  background-color: var(--icm-edge-label-surface) !important;
+  border-radius: 4px;
+}
+
+/* 组内节点间的文字说明不是节点、也不是跨组动作胶囊；用紧凑的圆角描边标出它是
+ * “连线说明”，减少深色块贴在线上时的归属歧义。 */
+#graph-canvas svg .edgeLabel[data-icm-edge-role="internal"] rect.labelBkg {
+  fill: #142b44 !important;
+  stroke: #476f96 !important;
+  stroke-width: 1px !important;
+  rx: 5px;
+  ry: 5px;
+}
+
+#graph-canvas svg .edgeLabel[data-icm-edge-role="internal"] foreignObject > div {
+  display: inline-flex !important;
+  align-items: center;
+  width: max-content !important;
+  min-width: max-content !important;
+  padding: 2px 7px !important;
+  border: 1px solid #476f96;
+  border-radius: 6px;
+  color: #deefff !important;
+  background: #142b44 !important;
+  box-shadow: 0 0 0 2px rgb(7 17 31 / 72%);
+  line-height: 1.22 !important;
+}
+
+/* 跨分组动作关系使用方向图标、描边胶囊和偏离主线的位置共同表达
+ * “从上一阶段流向下一阶段”，避免与分组标题、分支条件共享相同的视觉语义。 */
+#graph-canvas svg .edgeLabel.icm-action-edge-label foreignObject > div {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  box-sizing: border-box;
+  min-width: max-content !important;
+  width: max-content !important;
+  max-width: none !important;
+  padding: 3px 10px 3px 7px;
+  border: 1px solid #5f9fd1;
+  border-radius: 999px;
+  color: #deefff !important;
+  background: #0d263e !important;
+  box-shadow: 0 0 0 2px rgb(7 17 31 / 86%);
+  font-size: 0.9em;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-shadow: none;
+}
+
+#graph-canvas svg .edgeLabel.icm-action-edge-label foreignObject > div::before {
+  flex: 0 0 auto;
+  color: #86c1ec;
+  font-weight: 800;
+}
+
+#graph-canvas svg .edgeLabel.icm-action-edge-label[data-icm-edge-orientation="vertical"] foreignObject > div::before {
+  content: "↓";
+}
+
+#graph-canvas svg .edgeLabel.icm-action-edge-label[data-icm-edge-orientation="horizontal"] foreignObject > div::before {
+  content: "→";
+}
+
+#graph-canvas svg .edgeLabel.icm-action-edge-label p {
+  min-width: 0;
+  margin: 0 !important;
+  white-space: inherit !important;
+}
+
+/* 条件使用明确的文字前缀，而不是箭头或图形符号。这样它不会与分组页签的 ▦ 图标
+ * 混淆，也不会被误读为一个待执行节点；只有 MapSpec labelKind=condition 才采用此样式。 */
+#graph-canvas svg .edgeLabel.icm-condition-edge-label foreignObject > div {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 5px;
+  box-sizing: border-box;
+  min-width: max-content !important;
+  width: max-content !important;
+  max-width: none !important;
+  padding: 3px 10px 3px 6px;
+  border: 1px solid #5f9fd1;
+  border-radius: 999px;
+  color: #deefff !important;
+  background: #0d263e !important;
+  box-shadow: 0 0 0 2px rgb(7 17 31 / 86%);
+  font-size: 0.9em;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-shadow: none;
+}
+
+#graph-canvas svg .edgeLabel.icm-condition-edge-label foreignObject > div::before {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: #bfe2ff;
+  background: #173d60;
+  content: "◇";
+  font-size: 0.76em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+#graph-canvas svg .edgeLabel.icm-condition-edge-label p {
+  min-width: 0;
+  margin: 0 !important;
+  white-space: inherit !important;
+}
+
+/* 仅当条件标签因真实碰撞或连线歧义被移离原边时，短引线和起点圆点把它接回
+ * 原来的边标签锚点；圆点落在所属边上，避免读者把标签认到邻近曲线上。 */
+#graph-canvas svg .icm-edge-label-leader {
+  fill: none;
+  stroke: #86c1ec;
+  stroke-width: 1.35px;
+  stroke-dasharray: 3 3;
+  stroke-linecap: round;
+  opacity: 0.96;
+  pointer-events: none;
+}
+
+#graph-canvas svg .icm-edge-label-leader[data-icm-ambiguity-separated="true"] {
+  stroke: #b9eaff;
+  stroke-width: 1.85px;
+  stroke-dasharray: 2 2;
+}
+
+#graph-canvas svg .icm-edge-label-anchor-dot {
+  fill: #d0f2ff;
+  stroke: #07111f;
+  stroke-width: 1.15px;
+  pointer-events: none;
+}
+
+#app {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#fail-page {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-content: center;
+  gap: var(--icm-space-sm);
+  padding: var(--icm-space-lg);
+  text-align: center;
+  background: var(--icm-background);
+}
+
+#fail-page[hidden] { display: none; }
+
+#fail-page h1,
+#fail-page p { margin: 0; }
+
+#fail-page p { color: var(--icm-text-muted); }
+
+.icm-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.icm-toolbar,
+.icm-legend,
+#detail-panel {
+  pointer-events: auto;
+  box-shadow: var(--icm-shadow);
+}
+
+.icm-toolbar {
+  position: absolute;
+  top: var(--icm-space-md);
+  left: var(--icm-space-md);
+  display: flex;
+  gap: var(--icm-space-xs);
+  padding: var(--icm-space-xs);
+  border: 1px solid var(--icm-border);
+  border-radius: var(--icm-radius);
+  background: rgb(17 29 48 / 88%);
+  backdrop-filter: blur(12px);
+}
+
+.icm-toolbar button,
+.icm-close {
+  min-width: 34px;
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--icm-text);
+  background: transparent;
+}
+
+.icm-toolbar button:hover,
+.icm-close:hover {
+  border-color: var(--icm-border);
+  background: var(--icm-surface-muted);
+}
+
+.icm-toolbar button:first-child,
+.icm-toolbar button:nth-child(2) {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.icm-legend {
+  position: absolute;
+  right: var(--icm-space-md);
+  bottom: var(--icm-space-md);
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px var(--icm-space-sm);
+  max-width: calc(100% - 32px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  padding: var(--icm-space-sm) var(--icm-space-md);
+  border: 1px solid var(--icm-border);
+  border-radius: var(--icm-radius);
+  background: rgb(17 29 48 / 88%);
+  backdrop-filter: blur(12px);
+  font-size: 13px;
+}
+
+.icm-legend::-webkit-scrollbar {
+  display: none;
+}
+
+.icm-legend-section {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.icm-legend-section + .icm-legend-section {
+  padding-left: var(--icm-space-sm);
+  border-left: 1px solid rgb(91 132 170 / 55%);
+}
+
+.icm-legend-caption {
+  color: var(--icm-text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.icm-reading-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #cfe3f7;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.icm-reading-key::before {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 4px;
+  color: #cfeaff;
+  background: #173d60;
+  content: "";
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.icm-reading-key.group::before {
+  border-left: 3px solid #bdeaff;
+  border-radius: 3px;
+  background: #1e5d77;
+  content: "▦";
+}
+
+.icm-reading-key.condition::before {
+  content: "◇";
+}
+
+.icm-reading-key.action::before {
+  content: "→";
+  color: #86c1ec;
+  background: #0d263e;
+  border: 1px solid #5f9fd1;
+  border-radius: 999px;
+}
+
+.icm-reading-key.internal::before {
+  width: 18px;
+  min-width: 18px;
+  height: 13px;
+  padding: 0;
+  border: 1px solid #476f96;
+  border-radius: 4px;
+  background: #142b44;
+  content: "";
+}
+
+.claim-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--icm-space-xs);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.claim-state::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  content: "";
+  background: currentcolor;
+}
+
+.claim-state.verified,
+.evidence.verified { color: var(--icm-verified); }
+
+.claim-state.inferred,
+.evidence.inferred { color: var(--icm-inferred); }
+
+.claim-state.unconfirmed,
+.evidence.unconfirmed { color: var(--icm-unconfirmed); }
+
+g.node {
+  cursor: pointer;
+}
+
+g.node.icm-node-state-verified rect {
+  stroke: var(--icm-verified) !important;
+  stroke-width: 2.5px !important;
+}
+
+g.node.icm-node-state-inferred rect {
+  stroke: var(--icm-inferred) !important;
+  stroke-width: 2.5px !important;
+  stroke-dasharray: 6 3 !important;
+}
+
+g.node.icm-node-state-unconfirmed rect {
+  stroke: var(--icm-unconfirmed) !important;
+  stroke-width: 2.5px !important;
+  stroke-dasharray: 2 3 !important;
+}
+
+g.node.icm-node-selected rect {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--icm-accent) 74%, transparent));
+  stroke-width: 4px !important;
+}
+
+g.node:focus-visible rect {
+  stroke: var(--icm-accent) !important;
+  stroke-width: 4px !important;
+}
+
+#graph-canvas svg .cluster-label[data-icm-label-kind="group-title"] foreignObject > div {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  position: relative;
+  min-height: 26px;
+  padding: 3px 9px;
+  /* 分组标题是范围说明，不是节点或关系条件：采用带网格标志的紧凑色标。 */
+  border: 1px solid var(--icm-border);
+  border-left: 3px solid var(--icm-border);
+  border-radius: 6px;
+  color: var(--icm-text) !important;
+  font-size: 0.78em;
+  font-weight: 780;
+  letter-spacing: 0.02em;
+  line-height: 1.15 !important;
+  text-align: center;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  text-shadow: none;
+  /* 阶段页签的强调线位于自身盒模型内；不能用向下延展的 box-shadow，
+   * 否则 SVG foreignObject 会裁掉背景框底部。 */
+  box-shadow: none;
+}
+
+#graph-canvas svg .cluster-label[data-icm-label-kind="group-title"] foreignObject > div::before {
+  position: static;
+  flex: 0 0 auto;
+  color: rgb(238 245 255 / 92%);
+  font-size: 0.72em;
+  line-height: 1;
+  content: "▦";
+}
+
+#graph-canvas svg .cluster-label[data-icm-label-kind="group-title"] p {
+  min-width: 0;
+  width: auto;
+  margin: 0 !important;
+}
+
+#graph-canvas svg .cluster-label.icm-subgraph-tone-1 foreignObject > div { background: #1a4c75; border-color: #4f8cc2; border-left-color: #c4e4ff; }
+#graph-canvas svg .cluster-label.icm-subgraph-tone-2 foreignObject > div { background: #16575b; border-color: #4ba6a4; border-left-color: #c6f6f2; }
+#graph-canvas svg .cluster-label.icm-subgraph-tone-3 foreignObject > div { background: #4a3e82; border-color: #8979cc; border-left-color: #ded8ff; }
+#graph-canvas svg .cluster-label.icm-subgraph-tone-4 foreignObject > div { background: #633b74; border-color: #aa77c0; border-left-color: #f6d6fb; }
+#graph-canvas svg .cluster-label.icm-subgraph-tone-5 foreignObject > div { background: #225d70; border-color: #61a4b9; border-left-color: #d4f7ff; }
+#graph-canvas svg .cluster-label.icm-subgraph-tone-6 foreignObject > div { background: #3c5d87; border-color: #769aca; border-left-color: #dceaff; }
+
+#detail-panel {
+  position: absolute;
+  top: var(--icm-space-md);
+  right: var(--icm-space-md);
+  bottom: var(--icm-space-md);
+  width: clamp(540px, 42vw, 620px);
+  max-width: calc(100vw - 32px);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--icm-border);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgb(22 38 62 / 98%), rgb(13 24 40 / 98%));
+  scrollbar-color: var(--icm-border) transparent;
+}
+
+#detail-panel h2,
+#detail-panel h3 {
+  margin: 0 0 var(--icm-space-sm);
+}
+
+#detail-panel h2 {
+  padding-right: 40px;
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.icm-detail-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px;
+  scrollbar-color: var(--icm-border) transparent;
+}
+
+#detail-panel .icm-detail-scroll > .claim-state {
+  width: fit-content;
+  margin-top: var(--icm-space-sm);
+  padding: 4px 8px;
+  border: 1px solid currentcolor;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentcolor 12%, transparent);
+}
+
+#detail-panel h3 {
+  margin-top: var(--icm-space-lg);
+  font-size: 14px;
+}
+
+.icm-close {
+  position: absolute;
+  top: var(--icm-space-md);
+  right: var(--icm-space-md);
+  z-index: 3;
+  font-size: 24px;
+  line-height: 1;
+  border-color: color-mix(in srgb, var(--icm-border) 82%, white) !important;
+  background: rgb(13 24 40 / 96%) !important;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 26%);
+}
+
+.icm-summary,
+.icm-empty,
+.seg-subtitle {
+  color: var(--icm-text-muted);
+  line-height: 1.55;
+}
+
+.icm-summary {
+  margin: var(--icm-space-md) 0 0;
+  font-size: 14px;
+}
+
+.icm-segment {
+  margin-top: var(--icm-space-lg);
+  overflow-x: auto;
+  padding: var(--icm-space-md);
+  border: 1px solid color-mix(in srgb, var(--icm-border) 76%, transparent);
+  border-radius: 12px;
+  background: rgb(6 15 29 / 30%);
+}
+
+.icm-segment h3 { color: var(--icm-text); }
+
+.icm-segment .seg-subtitle { margin-top: -2px; }
+
+.icm-segment table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.icm-segment th,
+.icm-segment td {
+  padding: var(--icm-space-sm);
+  border: 1px solid var(--icm-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.icm-segment th {
+  color: var(--icm-text);
+  background: color-mix(in srgb, var(--icm-surface-muted) 90%, black);
+}
+
+.seg-code td,
+.seg-code th {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+.icm-evidence ul {
+  display: grid;
+  gap: var(--icm-space-sm);
+  margin: 0;
+  padding-left: 20px;
+}
+
+.evidence {
+  overflow-wrap: anywhere;
+}
+
+.ev-path {
+  color: var(--icm-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.ev-symbol,
+.ev-lines,
+.ev-state {
+  color: currentcolor;
+}
+
+@media (max-width: 768px) {
+  .icm-toolbar {
+    top: var(--icm-space-sm);
+    left: var(--icm-space-sm);
+  }
+
+  .icm-legend {
+    right: var(--icm-space-sm);
+    bottom: var(--icm-space-sm);
+  }
+
+  #detail-panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: min(58vh, 520px);
+    max-width: none;
+    padding: 0;
+    border: 1px solid var(--icm-border);
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .icm-detail-scroll {
+    padding: var(--icm-space-lg);
+  }
+}

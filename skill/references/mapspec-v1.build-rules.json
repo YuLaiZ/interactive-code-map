@@ -1,0 +1,143 @@
+{
+  "kind": "mapspec-build-rules",
+  "version": 1,
+  "title": "MapSpec v1 build-time rules and acceptance test vectors",
+  "description": "Plain rules data file (NOT a JSON Schema). Non-schema enforcement rules for build-html.mjs, separated from mapspec-v1.schema.json so that schema stays clean for strict validators (ajv strict mode rejects unknown keywords). These are runtime/build-time checks, consumed by build-html.mjs unit tests; not validated by ajv.",
+  "pathValidation": {
+    "description": "evidence.path must be relative to the user-confirmed repository root. Regex in schema rejects empty/absolute/drive/UNC; segment-level rules below are enforced in build-html.mjs since regex cannot express them.",
+    "rules": [
+      "Reject if path contains backslash '\\'",
+      "After splitting on '/', reject if any segment is '..' or '.'",
+      "Reject if path resolves outside the user-confirmed repository root"
+    ],
+    "acceptanceTestVectors": [
+      ["src/main/Main.java", true],
+      ["a/b/c.ts", true],
+      ["", false],
+      ["/etc/passwd", false],
+      ["../secret", false],
+      ["a/../../b", false],
+      ["src/../a.ts", false],
+      ["src/./a.ts", false],
+      ["./config", false],
+      ["C:\\\\Users\\\\x", false],
+      ["\\\\\\\\server\\\\share", false],
+      ["src\\\\a.ts", false]
+    ]
+  },
+  "evidenceRangeValidation": {
+    "description": "When both lineStart and lineEnd are present, build-html.mjs must enforce lineEnd >= lineStart. Schema's if/then already requires verified evidence to carry both line numbers.",
+    "rules": [
+      "If lineStart and lineEnd present, lineEnd must be >= lineStart",
+      "verified evidence requires non-empty relative path + lineStart + lineEnd (enforced by schema if/then)"
+    ]
+  },
+  "displayPathPrivacy": {
+    "description": "All displayable MapSpec strings (meta, titles, labels, notes and detail cells) must not contain a user-local absolute filesystem path. evidence.path is governed by the stricter relative-path contract above. The runtime check recognizes Unix user/system roots, Windows drive paths and UNC paths; URL syntax is allowed.",
+    "rules": [
+      "Reject /Users/<name>, /home/<name>, /root, /private, /Volumes, /var, /etc, /tmp, /opt, /Library, /usr, /bin, /sbin, /dev, /proc, /sys, /run, /boot, /mnt, /media, /srv, /System, /Applications or /Network path forms in displayable strings",
+      "Reject Windows drive paths and UNC paths in displayable strings",
+      "Do not treat a normal HTTP(S) URL as a filesystem path"
+    ],
+    "acceptanceTestVectors": [
+      ["/Users/alice/private-repo", true],
+      ["node path=/usr/local/bin/node", true],
+      ["see C:\\Users\\alice\\repo", true],
+      ["\\\\server\\share\\repo", true],
+      ["https://example.test/api/users", false],
+      ["相对范围 src/features", false]
+    ]
+  },
+  "codeExcerptLimits": {
+    "description": "A code segment is bounded to keep the generated standalone HTML reviewable and to prevent unbounded excerpt embedding.",
+    "maxRows": 80,
+    "maxCellChars": 500,
+    "maxSegmentChars": 12000,
+    "rules": [
+      "Apply these limits only when detail.segments[].kind is code",
+      "Schema enforces maxRows and maxCellChars; the runtime validator enforces all three limits including maxSegmentChars"
+    ]
+  },
+  "mermaidDslInjectionValidation": {
+    "description": "All text entering the Mermaid DSL — node titles, edge labels, subgraph titles (nodes[].subgraph) — is untrusted. build-html.mjs must encode them to literal text and use internally-generated safe IDs for subgraphs. These vectors verify the encoder. Asserting only 'mustNotChangeDsl' is insufficient — trivially dropping the malicious title could pass; each vector asserts structure-preserved + literal-visible + safe-id.",
+    "rules": [
+      "subgraph uses internally-generated safe ID (e.g. sg1, sg2), user text only as display label",
+      "Encode characters that alter DSL structure: 'end', newline, quotes, %%{...}, -->/---",
+      "Structure preserved: number of nodes/edges/subgraphs in rendered output matches input MapSpec",
+      "Literal visible: the input text (after encoding) still appears as literal display text, not dropped",
+      "Safe id: subgraph statement uses internal id, not the user text"
+    ],
+    "acceptanceTestVectors": [
+      { "field": "subgraph", "input": "end", "assertions": ["structurePreserved", "literalVisible", "safeSubgraphId"] },
+      { "field": "subgraph", "input": "a\nb", "assertions": ["structurePreserved", "literalVisible", "safeSubgraphId"] },
+      { "field": "subgraph", "input": "a\"b", "assertions": ["structurePreserved", "literalVisible", "safeSubgraphId"] },
+      { "field": "subgraph", "input": "%%{init}%%", "assertions": ["structurePreserved", "literalVisible", "safeSubgraphId"] },
+      { "field": "nodeTitle", "input": "x --> y", "assertions": ["structurePreserved", "literalVisible"] },
+      { "field": "nodeTitle", "input": "end", "assertions": ["structurePreserved", "literalVisible"] },
+      { "field": "edgeLabel", "input": "a---b", "assertions": ["structurePreserved", "literalVisible"] }
+    ]
+  },
+  "sensitiveDataRejection": {
+    "description": "P1-4 (v3.2.12): security contract forbids .env/keys/credentials in HTML, but rules previously did not reject them. validate.mjs and build-html.mjs MUST reject sensitive paths and sensitive content. Patterns are a heuristic early-warning (v3.2.14): not an absolute guarantee of no leakage; the final HTML post-scan MUST reuse the SAME rule set exported by skill/renderer/validate-map-spec.mjs. Vectors in tests/mapspec/fixtures/invalid/.",
+    "sensitivePathPatterns": [
+      "(^|/)\\.[a-zA-Z0-9_-]*env([^a-zA-Z0-9_-]|$)",
+      "(^|/)\\.envrc\\b",
+      "(^|/)id_rsa($|\\.)",
+      "(^|/)id_ed25519($|\\.)",
+      "(^|/)\\.ssh($|/)",
+      "(^|/)credentials($|/)",
+      "(^|/)\\.aws($|/)",
+      "(^|/)secrets?($|/)",
+      "(^|/)\\.pem$",
+      "(^|/)\\.p12$",
+      "(^|/)\\.key$"
+    ],
+    "sensitiveContentPatterns": [
+      "(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY)",
+      "(AKIA[0-9A-Z]{16})",
+      "(gh[pousr]_[A-Za-z0-9]{36,})",
+      "(sk-[A-Za-z0-9]{20,})",
+      "(sk-proj-[A-Za-z0-9_-]{20,})"
+    ],
+    "acceptanceTestVectors": [
+      { "type": "path", "input": ".env", "mustReject": true },
+      { "type": "path", "input": "src/.env.local", "mustReject": true },
+      { "type": "path", "input": ".envrc", "mustReject": true },
+      { "type": "path", "input": "config/id_rsa", "mustReject": true },
+      { "type": "path", "input": ".ssh/known_hosts", "mustReject": true },
+      { "type": "path", "input": "src/main.js", "mustReject": false },
+      { "type": "content", "input": "key sk-abcdefghijklmnopqrstuvwxyz", "mustReject": true },
+      { "type": "content", "input": "key sk-proj-abcdefghijklmnopqrstuvwxyz-1234567890", "mustReject": true },
+      { "type": "content", "input": "BEGIN RSA PRIVATE KEY", "mustReject": true },
+      { "type": "content", "input": "AKIAIOSFODNN7EXAMPLE", "mustReject": true },
+      { "type": "content", "input": "ordinary text", "mustReject": false }
+    ],
+    "htmlPostScan": "build-html.mjs MUST re-scan the final HTML with the SAME rule set exported by validate-map-spec.mjs (import isSensitivePath/isSensitiveContent/containsAbsoluteFilesystemPath); reject on match."
+  },
+  "verifiedEvidenceFileValidation": {
+    "description": "P0 (v3.2.14): state=verified evidence must trace back to code that was actually inspected. When --repo-root is provided, build-html.mjs MUST enforce: repo root exists and is a directory; each verified evidence.path resolves (realpath) to a real regular file inside the root; lineStart/lineEnd are within the file's actual line count (counted by '\\n', CRLF-safe). Missing files, directories, out-of-range lines, symlink escapes and root-is-a-file are rejected. inferred/unconfirmed evidence does NOT require the file to exist (they are not 'verified'), but still must pass relative-path and sensitive rules.",
+    "rules": [
+      "repo root must exist and be a directory",
+      "verified evidence.path must realpath to a real regular file inside the root (symlink escape rejected)",
+      "verified evidence lineEnd must be <= actual file line count (\\n count, CRLF-safe)",
+      "inferred/unconfirmed evidence: file existence not required"
+    ],
+    "acceptanceTestVectors": [
+      "missing file -> reject",
+      "path pointing to a directory -> reject",
+      "lineEnd beyond file line count -> reject",
+      "CRLF file line count correct -> pass within range, reject beyond",
+      "symlink escape -> reject",
+      "repo root is a regular file -> reject",
+      "inferred evidence with nonexistent path -> pass",
+      "NUL byte in evidence path -> reject (no exception)",
+      "newline-only file line count: '\\n' counts 1 line, '\\n\\n' counts 2 lines (trailing empty segment removed) -> pass within range, reject beyond"
+    ]
+  },
+  "strictValidationCommand": {
+    "description": "Canonical command to validate a MapSpec against the schema in strict mode. It is pinned through package-lock.json and invoked by tests/mapspec/ajv-strict.mjs.",
+    "command": "ajv validate -s skill/references/mapspec-v1.schema.json -d <mapspec.json> --strict=true --strict-required=true --spec=draft2020",
+    "implementationStatus": "pinned-via-package-lock",
+    "notes": "schema must compile cleanly under ajv strict mode WITH strict-required (no unknown keywords, no required-without-properties). Pinned by package-lock.json: ajv@8.20.0, ajv-cli@5.0.0. build-rules (this file) are enforced by build-html.mjs unit tests, not by ajv."
+  }
+}

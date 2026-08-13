@@ -1,0 +1,1 @@
+{"schemaVersion":1,"meta":{"title":"t","question":"q","scope":"s","languageProfile":"l","summary":"a"},"nodes":[{"id":"n1","title":"t","claimState":"inferred","evidence":[{"path":"a.js","lineStart":0.5,"lineEnd":2,"state":"inferred"}],"detail":{"summary":"s","segments":[]}}]}

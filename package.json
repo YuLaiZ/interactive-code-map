@@ -1,0 +1,47 @@
+{
+  "name": "interactive-code-map",
+  "version": "0.1.0",
+  "description": "A cross-client skill that turns codebase evidence into a single interactive HTML code map.",
+  "author": "YuLaiZ",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YuLaiZ/interactive-code-map.git"
+  },
+  "homepage": "https://github.com/YuLaiZ/interactive-code-map#readme",
+  "bugs": {
+    "url": "https://github.com/YuLaiZ/interactive-code-map/issues"
+  },
+  "keywords": [
+    "skill",
+    "agent",
+    "code-map",
+    "mermaid",
+    "react",
+    "code-visualization",
+    "codebase"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test:mapspec:core": "node tests/mapspec/run-tests.mjs",
+    "test:mapspec": "npm run test:mapspec:core && node tests/mapspec/schema-diff.test.mjs",
+    "test:build": "node tests/build/run-tests.mjs",
+    "test:browser": "playwright test",
+    "ajv:strict": "node tests/mapspec/ajv-strict.mjs",
+    "test": "npm run test:mapspec && npm run test:build && npm run test:browser"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "ajv": "8.20.0",
+    "ajv-cli": "5.0.0",
+    "mermaid": "11.16.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "overrides": {
+    "fast-json-patch": "3.1.1"
+  }
+}

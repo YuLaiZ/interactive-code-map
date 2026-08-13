@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "title": "Subgraph Title Occlusion Fixture",
+    "question": "Fixture: long subgraph titles with first nodes near the top edge, to verify the anti-occlusion post-process.",
+    "scope": "TEST-ONLY fixture marker (v3.2.12): synthetic geometry fixture for browser assertions; NOT a real codebase. meta.languageProfile === 'fixture' marks it test-only (v3.2.13 correction: the marker lives in meta, not scope) — production build-html.mjs MUST reject any MapSpec with this marker; tests/mapspec/validate.mjs only admits it under --allow-test-fixture and only for files under tests/**/fixtures/** (v3.2.13). All evidence is claimState/state = inferred: geometric construction is a reasonable inference, NOT verified against real source code. Geometry-construction verification lives in the test harness sidecar, not in this JSON.",
+    "languageProfile": "fixture",
+    "summary": "Two subgraphs with long titles and first nodes near the top edge. The browser harness exercises the production repair entry point directly: titles must stay fully inside their own group, be re-centered after external movement, retain a safe gap from the first node, and remain stable when repaired repeatedly. No special global test flag exists."
+  },
+  "nodes": [
+    {
+      "id": "alphaEntry",
+      "title": "Alpha Region First Node Near Top Edge With A Long Label",
+      "category": "entry",
+      "subgraph": "订单创建库存校验支付确认协同处理链路的异常恢复审计追踪与补偿策略说明",
+      "claimState": "inferred",
+      "evidence": [
+        { "path": "fixture/alpha/main.js", "lineStart": 1, "lineEnd": 10, "symbol": "entry", "note": "fixture geometry (not real code)", "state": "inferred" }
+      ],
+      "detail": {
+        "summary": "First node of the alpha region, intentionally placed near the subgraph top edge.",
+        "segments": []
+      }
+    },
+    {
+      "id": "alphaNext",
+      "title": "Alpha Second Node",
+      "category": "step",
+      "subgraph": "订单创建库存校验支付确认协同处理链路的异常恢复审计追踪与补偿策略说明",
+      "claimState": "inferred",
+      "evidence": [
+        { "path": "fixture/alpha/main.js", "lineStart": 12, "lineEnd": 20, "symbol": "next", "note": "fixture geometry (not real code)", "state": "inferred" }
+      ],
+      "detail": {
+        "summary": "Second node in the alpha region.",
+        "segments": []
+      }
+    },
+    {
+      "id": "betaEntry",
+      "title": "Beta Region First Node Also With A Long Label Near The Top",
+      "category": "entry",
+      "subgraph": "库存锁定支付网关回滚通知协同处理链路的长标题布局裁剪回归验证说明",
+      "claimState": "inferred",
+      "evidence": [
+        { "path": "fixture/beta/main.js", "lineStart": 1, "lineEnd": 8, "symbol": "entry", "note": "fixture geometry (not real code)", "state": "inferred" }
+      ],
+      "detail": {
+        "summary": "First node of the beta region, intentionally placed near the subgraph top edge.",
+        "segments": []
+      }
+    },
+    {
+      "id": "betaNext",
+      "title": "Beta Second Node",
+      "category": "step",
+      "subgraph": "库存锁定支付网关回滚通知协同处理链路的长标题布局裁剪回归验证说明",
+      "claimState": "inferred",
+      "evidence": [
+        { "path": "fixture/beta/main.js", "lineStart": 10, "lineEnd": 18, "symbol": "next", "note": "fixture geometry (not real code)", "state": "inferred" }
+      ],
+      "detail": {
+        "summary": "Second node in the beta region.",
+        "segments": []
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "alphaEntry",
+      "to": "alphaNext",
+      "label": "then",
+      "claimState": "inferred",
+      "evidence": [
+        { "path": "fixture/alpha/main.js", "lineStart": 10, "lineEnd": 12, "symbol": "flow", "note": "fixture geometry (not real code)", "state": "inferred" }
+      ]
+    },
+    {
+      "from": "betaEntry",
+      "to": "betaNext",
+      "label": "then",
+      "claimState": "inferred",
+      "evidence": [
+        { "path": "fixture/beta/main.js", "lineStart": 8, "lineEnd": 10, "symbol": "flow", "note": "fixture geometry (not real code)", "state": "inferred" }
+      ]
+    },
+    {
+      "from": "alphaNext",
+      "to": "betaEntry",
+      "label": "cross-region",
+      "claimState": "inferred",
+      "evidence": [
+        { "path": "fixture/alpha/main.js", "lineStart": 20, "lineEnd": 22, "symbol": "handoff", "note": "fixture geometry (not real code)", "state": "inferred" }
+      ]
+    }
+  ]
+}
