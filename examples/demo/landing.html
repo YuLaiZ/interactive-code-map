@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>interactive-code-map demos</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #07111f;
+      color: #e8f1ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background:
+        radial-gradient(circle at 15% 12%, rgba(45, 212, 191, .18), transparent 32rem),
+        radial-gradient(circle at 84% 92%, rgba(99, 102, 241, .2), transparent 35rem),
+        #07111f;
+    }
+    main { width: min(100%, 780px); }
+    .eyebrow {
+      margin: 0 0 16px;
+      color: #75e6d2;
+      font-size: .76rem;
+      font-weight: 750;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .project-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .55em;
+      min-height: 44px;
+      padding: 9px 12px;
+      margin: -9px -12px;
+      border-radius: 9px;
+      color: inherit;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .project-link:hover, .project-link:focus-visible {
+      background: rgba(117, 230, 210, .12);
+      color: #b5fff1;
+      outline: none;
+    }
+    .project-link-icon { font-size: 1.25em; line-height: 1; }
+    .project-link-destination {
+      display: inline-flex;
+      align-items: center;
+      gap: .36em;
+      padding-left: .7em;
+      border-left: 1px solid rgba(117, 230, 210, .48);
+      color: #b5fff1;
+      font-size: .8em;
+      letter-spacing: .08em;
+    }
+    h1 {
+      max-width: 13ch;
+      margin: 0;
+      font-size: clamp(2.5rem, 8vw, 5.4rem);
+      line-height: .95;
+      letter-spacing: -.065em;
+    }
+    h1 span { display: block; }
+    h1 span + span {
+      margin-top: .22em;
+      color: #c9d9ef;
+      font-size: .56em;
+      letter-spacing: -.04em;
+    }
+    .intro {
+      max-width: 56ch;
+      margin: 26px 0 34px;
+      color: #b9c8df;
+      font-size: clamp(1rem, 2vw, 1.18rem);
+      line-height: 1.65;
+    }
+    .demos {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .demo {
+      position: relative;
+      min-height: 206px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      border: 1px solid rgba(190, 214, 255, .2);
+      border-radius: 19px;
+      color: inherit;
+      text-decoration: none;
+      background: rgba(14, 30, 51, .72);
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+    .demo::after {
+      position: absolute;
+      right: -17px;
+      bottom: -50px;
+      width: 142px;
+      height: 142px;
+      border-radius: 50%;
+      content: "";
+      opacity: .58;
+      filter: blur(1px);
+    }
+    .demo.en::after { background: #577cff; }
+    .demo.zh::after { background: #22c7a5; }
+    .demo:hover, .demo:focus-visible {
+      transform: translateY(-4px);
+      border-color: rgba(180, 232, 255, .72);
+      background: rgba(20, 42, 70, .94);
+      outline: none;
+    }
+    .language { color: #98abc8; font-size: .86rem; font-weight: 650; }
+    .name { z-index: 1; margin: 12px 0 0; font-size: 1.5rem; font-weight: 780; letter-spacing: -.035em; }
+    .arrow { z-index: 1; color: #eaf4ff; font-size: 1.45rem; }
+    footer { margin-top: 24px; color: #8296b4; font-size: .84rem; }
+    @media (max-width: 580px) {
+      body { padding: 22px; }
+      .project-link { flex-wrap: wrap; }
+      .project-link-destination { flex-basis: 100%; padding-left: 0; border-left: 0; }
+      .demos { grid-template-columns: 1fr; }
+      .demo { min-height: 164px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow"><a class="project-link" href="https://github.com/YuLaiZ/interactive-code-map" target="_blank" rel="noopener"><span>interactive-code-map</span><span class="project-link-destination">GitHub Repository <span class="project-link-icon" aria-hidden="true">↗</span></span></a></p>
+    <h1><span>Choose your demo.</span><span lang="zh-CN">选择你的演示版本。</span></h1>
+    <p class="intro">Explore the same evidence-backed code map in English or Simplified Chinese. 选择你偏好的语言版本，开始探索交互式代码图谱。</p>
+    <nav class="demos" aria-label="Choose a demo language">
+      <a class="demo en" href="./en/" lang="en" target="_blank" rel="noopener">
+        <div>
+          <span class="language">English</span>
+          <p class="name">English demo</p>
+        </div>
+        <span class="arrow" aria-hidden="true">↗</span>
+      </a>
+      <a class="demo zh" href="./zh-CN/" lang="zh-CN" target="_blank" rel="noopener">
+        <div>
+          <span class="language">简体中文</span>
+          <p class="name">中文 Demo</p>
+        </div>
+        <span class="arrow" aria-hidden="true">↗</span>
+      </a>
+    </nav>
+    <footer>Both demos use the same original sample repository and evidence model. 两个 Demo 使用同一份原创示例源码与证据模型。</footer>
+  </main>
+</body>
+</html>

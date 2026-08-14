@@ -113,14 +113,14 @@ test('大陆友好 profile 的首源超时会回退到 jsDelivr', async ({ page 
   ]);
 });
 
-test('大陆友好 profile 的前三源失败会回退到 bootcdn', async ({ page }) => {
+test('大陆友好 profile 的前四个 React 源失败会回退到 bootcdn', async ({ page }) => {
   const profile = CDN_PROFILES['china-friendly'];
   const dependencyUrls = new Set(profile.flatMap((dependency) => dependency.sources.map((source) => source.url)));
   const requests = [];
   page.on('request', (request) => {
     if (dependencyUrls.has(request.url())) requests.push(request.url());
   });
-  for (const source of profile[0].sources.slice(0, 3)) {
+  for (const source of profile[0].sources.slice(0, 4)) {
     await page.route(source.url, serviceUnavailableResponse);
   }
 

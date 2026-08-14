@@ -34,8 +34,8 @@ Apply this contract to every multi-group MapSpec and to every visual revision. I
 
 ## Locale and fixed copy
 
-- Set `meta.uiLocale` to `en` or `zh-CN` for every new production MapSpec. Demo data is explicitly English; a Chinese delivery defaults to `zh-CN` unless the user requests English.
-- Localize all fixed UI together: reading guide, relationship keys, evidence-state labels, controls guide, detail controls, and empty-state copy. Keep business text in its supplied language.
+- Set `meta.uiLocale` to `en` or `zh-CN` for every new production MapSpec. The maintained English and Chinese demos share the same graph structure and evidence data while localizing reader-facing copy; a Chinese delivery defaults to `zh-CN` unless the user requests English.
+- Localize all fixed UI together: document language, graph region name, dependency-failure page, reading guide, relationship keys, evidence-state labels, controls guide, detail controls, and empty-state copy. Keep business text in its supplied language.
 - Use the diamond icon as the condition marker. The adjacent legend text provides the localized semantic name; do not repeat a language-specific word inside every condition pill.
 
 ## Required visual acceptance

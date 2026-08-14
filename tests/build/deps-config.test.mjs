@@ -28,9 +28,9 @@ const expectedOrders = {
     mermaid: ['cdn.jsdelivr.net', 'unpkg.com'],
   },
   'china-friendly': {
-    react: ['cdn.staticfile.org', 'cdn.jsdelivr.net', 'unpkg.com', 'cdn.bootcdn.net'],
-    'react-dom': ['cdn.staticfile.org', 'cdn.jsdelivr.net', 'unpkg.com', 'cdn.bootcdn.net'],
-    mermaid: ['cdn.jsdelivr.net', 'unpkg.com'],
+    react: ['registry.npmmirror.com', 'cdn.staticfile.org', 'cdn.jsdelivr.net', 'unpkg.com', 'cdn.bootcdn.net'],
+    'react-dom': ['registry.npmmirror.com', 'cdn.staticfile.org', 'cdn.jsdelivr.net', 'unpkg.com', 'cdn.bootcdn.net'],
+    mermaid: ['registry.npmmirror.com', 'cdn.jsdelivr.net', 'unpkg.com'],
   },
 };
 const expectedVersions = { react: '18.3.1', 'react-dom': '18.3.1', mermaid: '11.16.1' };
@@ -85,7 +85,7 @@ for (const profileName of CDN_PROFILE_NAMES) {
   }
 }
 
-assert(CDN_PROFILES['china-friendly'].find((dep) => dep.name === 'mermaid')?.sources.map((entry) => new URL(entry.url).host).join(',') === 'cdn.jsdelivr.net,unpkg.com', 'china-friendly 不为 Mermaid 注入未验证的中国大陆镜像');
+assert(CDN_PROFILES['china-friendly'].every((dep) => new URL(dep.sources[0].url).host === 'registry.npmmirror.com'), 'china-friendly 的全部依赖均以 npmmirror 为首源');
 
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`);
 process.exit(fail ? 1 : 0);

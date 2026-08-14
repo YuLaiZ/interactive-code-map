@@ -20,4 +20,4 @@ jobs:
       - run: npm ci
       - run: npm run test:mapspec
       - run: npm run test:build
-      - run: npm run ajv:strict -- examples/demo/expected-mapspec.json
+      - run: npm run ajv:strict -- examples/demo/expected-mapspec.json examples/demo/expected-mapspec.zh-CN.json

@@ -4,9 +4,10 @@
 
 A cross-client skill that turns codebase evidence into a single interactive HTML code map, with explicit evidence states and a structured MapSpec that separates research from presentation.
 
-## Online demo
+## Online demos
 
-Explore the original demo at [yulaiz.github.io/interactive-code-map](https://yulaiz.github.io/interactive-code-map/).
+- [English demo](https://yulaiz.github.io/interactive-code-map/en/)
+- [简体中文演示](https://yulaiz.github.io/interactive-code-map/zh-CN/)
 
 ## Installation
 
@@ -45,7 +46,7 @@ The builder validates the MapSpec, embeds the application code and CSS, and writ
 ### CDN delivery profiles
 
 - `global` (default): jsDelivr → unpkg for every dependency.
-- `china-friendly`: staticfile → jsDelivr → unpkg → bootcdn for React and ReactDOM; Mermaid remains jsDelivr → unpkg because no byte-identical China-mainland mirror is approved for the pinned version.
+- `china-friendly`: npmmirror → staticfile → jsDelivr → unpkg → bootcdn for React and ReactDOM; Mermaid uses npmmirror → jsDelivr → unpkg.
 
 Choose `china-friendly` only for an explicit China-mainland preference or audience. User language is not enough by itself; actual speed measurements are appropriate only when the build environment represents the target audience and the user agrees to network probing. Every configured source is HTTPS, version-pinned, SRI-protected, limited to 8 seconds, and used only as an ordered fallback.
 
@@ -53,15 +54,23 @@ Before generation, the agent asks whether keyboard operation and small-viewport 
 
 ### In-map controls
 
-Each generated map has a fixed, localized guide with three labelled sections: reading guide, evidence status, and controls. The controls section shows the primary interaction: click a card for details; use `Tab` to select a card, `Enter` to open it, and `Esc` to close the detail panel. Nodes also accept `Space` as the equivalent button action. The generation-time confirmation above still determines whether keyboard and small-viewport behavior are in scope for acceptance.
+Each generated map has a fixed, localized guide with three labelled sections: reading guide, evidence status, and controls. The controls section shows the primary interaction: click a card for details; use `Tab` to select a card, `Enter` to open it, and `Esc` to close the detail panel. Nodes also accept `Space` as the equivalent button action. The generated document language, graph region name, and dependency-failure page use the same locale. The generation-time confirmation above still determines whether keyboard and small-viewport behavior are in scope for acceptance.
 
-For a runnable original example, see [examples/demo/expected-mapspec.json](examples/demo/expected-mapspec.json), its small source repository, and [examples/demo/expected-output.html](examples/demo/expected-output.html). Rebuild the checked-in HTML with:
+For runnable original examples, see the [English MapSpec](examples/demo/expected-mapspec.json) and [Chinese MapSpec](examples/demo/expected-mapspec.zh-CN.json). They share the same source repository, graph structure, claim states, and evidence data; only reader-facing map copy and fixed UI are localized. The English demo uses `global`; the Chinese demo is explicitly for China-mainland visitors and uses `china-friendly`. Rebuild the checked-in HTML files with:
 
 ~~~bash
 node skill/renderer/build-html.mjs \
   --in examples/demo/expected-mapspec.json \
   --out examples/demo/expected-output.html \
   --repo-root examples/demo/sample-repo
+~~~
+
+~~~bash
+node skill/renderer/build-html.mjs \
+  --in examples/demo/expected-mapspec.zh-CN.json \
+  --out examples/demo/expected-output.zh-CN.html \
+  --repo-root examples/demo/sample-repo \
+  --cdn-profile china-friendly
 ~~~
 
 ## Principles

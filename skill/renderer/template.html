@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="__ICM_DOCUMENT_LANG__">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,14 +10,14 @@ __ICM_STYLES_CSS__
 </head>
 <body>
   <div id="root">
-    <main id="graph-viewport" aria-label="Interactive code map">
+    <main id="graph-viewport" aria-label="__ICM_GRAPH_VIEWPORT_LABEL__">
       <div id="graph-canvas"></div>
     </main>
     <div id="app"></div>
     <section id="fail-page" hidden role="alert" aria-live="assertive">
-      <h1>Failed to load dependencies</h1>
-      <p>This code map requires React and Mermaid from a CDN. All configured sources failed to load because of a network, timeout, or integrity error.</p>
-      <p>Check your network connection and try again later.</p>
+      <h1>__ICM_FAILURE_HEADING__</h1>
+      <p>__ICM_FAILURE_SUMMARY__</p>
+      <p>__ICM_FAILURE_RETRY__</p>
     </section>
   </div>
   <script>

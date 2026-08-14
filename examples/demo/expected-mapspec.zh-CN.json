@@ -1,0 +1,941 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "title": "咖啡柜台订单流程",
+    "question": "已提交的柜台订单如何从协作方准备开始，经过校验和支付，到达收据交付与后续操作？",
+    "scope": "sample-repo 中的四个小型 JavaScript 模块。",
+    "languageProfile": "javascript-esm",
+    "uiLocale": "zh-CN",
+    "layoutDirection": "TD",
+    "summary": "本示例刻意覆盖十个分组和十四个节点。订单入口分流到商品目录、库存、支付令牌、支付金额和横切审计；库存保留与金额计算再和支付校验汇合至授权步骤。它覆盖分支、汇合、跨分组连线，以及推断和待确认路径。所有已验证结论都指向示例源码的具体行。"
+  },
+  "nodes": [
+    {
+      "id": "n1",
+      "title": "创建订单",
+      "category": "编排",
+      "subgraph": "订单接入",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 5,
+          "lineEnd": 5,
+          "symbol": "createOrder",
+          "note": "公开编排入口接收输入和可选的依赖覆盖。",
+          "state": "verified"
+        },
+        {
+          "path": "order-service.js",
+          "lineStart": 6,
+          "lineEnd": 8,
+          "symbol": "createOrder",
+          "note": "存在注入协作方时使用注入实现，否则回退到导入的默认实现。",
+          "state": "verified"
+        },
+        {
+          "path": "order-service.js",
+          "lineStart": 9,
+          "lineEnd": 11,
+          "symbol": "createOrder",
+          "note": "库存预留前会规范化商品，预留总额会成为支付金额。",
+          "state": "verified"
+        },
+        {
+          "path": "order-service.js",
+          "lineStart": 12,
+          "lineEnd": 12,
+          "symbol": "createOrder",
+          "note": "收据构建器接收订单 ID、规范化商品和已接受的支付对象。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "createOrder 编排完整订单路径，并将支付结果交给收据生成器。",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "执行顺序",
+            "subtitle": "order-service.js :5-12",
+            "headers": [
+              "顺序",
+              "操作",
+              "作用"
+            ],
+            "rows": [
+              [
+                "1",
+                "解析协作方",
+                "允许测试覆盖默认实现"
+              ],
+              [
+                "2",
+                "规范化商品",
+                "为后续服务提供稳定结构"
+              ],
+              [
+                "3",
+                "保留库存并支付",
+                "将保留金额传给支付接口"
+              ],
+              [
+                "4",
+                "生成收据",
+                "返回调用方可用的结果"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n2",
+      "title": "解析协作方",
+      "category": "依赖准备",
+      "subgraph": "订单接入",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 6,
+          "lineEnd": 8,
+          "symbol": "createOrder",
+          "note": "提供时使用注入协作方，否则选择导入的默认实现。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "库存、支付和收据三个协作方都可被测试依赖替换。",
+        "segments": [
+          {
+            "kind": "schema",
+            "title": "回退规则",
+            "headers": [
+              "操作",
+              "优先实现",
+              "默认实现"
+            ],
+            "rows": [
+              [
+                "保留库存",
+                "dependencies.reserveIngredients",
+                "reserveIngredients"
+              ],
+              [
+                "授权支付",
+                "dependencies.chargeCard",
+                "chargeCard"
+              ],
+              [
+                "生成收据",
+                "dependencies.makeReceipt",
+                "makeReceipt"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n3",
+      "title": "规范化商品",
+      "category": "数据转换",
+      "subgraph": "订单接入",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 9,
+          "lineEnd": 9,
+          "symbol": "createOrder",
+          "note": "查询库存前先规范化输入。",
+          "state": "verified"
+        },
+        {
+          "path": "order-service.js",
+          "lineStart": 15,
+          "lineEnd": 20,
+          "symbol": "normalizeItems",
+          "note": "将 sku、quantity 和 unitCents 转换为一致的记录形态。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "输入商品在进入库存和收据处理前被规范化。",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "商品字段处理",
+            "headers": [
+              "字段",
+              "处理",
+              "结果"
+            ],
+            "rows": [
+              [
+                "sku",
+                "String(item.sku)",
+                "稳定的商品标识"
+              ],
+              [
+                "quantity",
+                "至少为 1",
+                "避免零或无效数量"
+              ],
+              [
+                "unitCents",
+                "转换为数字",
+                "保留在规范化对象中"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n4",
+      "title": "读取商品目录",
+      "category": "库存查询",
+      "subgraph": "商品目录",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 9,
+          "lineEnd": 10,
+          "symbol": "reserveIngredients",
+          "note": "为每个规范化 sku 获取商品目录项。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "内存目录是库存校验和总额计算的共同数据来源。",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "目录内容",
+            "headers": [
+              "SKU",
+              "可用数量",
+              "单价（分）"
+            ],
+            "rows": [
+              [
+                "espresso",
+                "12",
+                "280"
+              ],
+              [
+                "oat-milk",
+                "8",
+                "90"
+              ],
+              [
+                "croissant",
+                "5",
+                "350"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n5",
+      "title": "校验库存数量",
+      "category": "库存校验",
+      "subgraph": "可用性策略",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 11,
+          "lineEnd": 13,
+          "symbol": "reserveIngredients",
+          "note": "目录项缺失或可用数量不足时拒绝。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "每个商品必须存在且库存足够，流程才会继续。",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "失败条件",
+            "headers": [
+              "条件",
+              "行为"
+            ],
+            "rows": [
+              [
+                "目录中不存在 SKU",
+                "抛出不可用商品错误"
+              ],
+              [
+                "可用数量小于请求数量",
+                "抛出不可用商品错误"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n6",
+      "title": "扣减库存",
+      "category": "库存变更",
+      "subgraph": "库存预留",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 14,
+          "lineEnd": 14,
+          "symbol": "reserveIngredients",
+          "note": "校验通过后才减少可用数量。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "校验完成后，函数立即在目录对象上扣减库存。",
+        "segments": [
+          {
+            "kind": "schema",
+            "title": "保留结果",
+            "headers": [
+              "字段",
+              "含义"
+            ],
+            "rows": [
+              [
+                "reserved",
+                "库存已保留的布尔值"
+              ],
+              [
+                "totalCents",
+                "用于支付的累计金额"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n7",
+      "title": "计算订单金额",
+      "category": "金额计算",
+      "subgraph": "金额计算",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 15,
+          "lineEnd": 17,
+          "symbol": "reserveIngredients",
+          "note": "累加各行金额，并随预留结果返回 totalCents。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "订单金额在库存保留循环中累计计算，而不是使用输入中的 unitCents。",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "计算规则",
+            "headers": [
+              "表达式",
+              "数据来源",
+              "用途"
+            ],
+            "rows": [
+              [
+                "quantity × entry.unitCents",
+                "商品目录",
+                "累计 totalCents"
+              ],
+              [
+                "totalCents",
+                "保留结果",
+                "支付金额"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n8",
+      "title": "支付接口",
+      "category": "支付校验",
+      "subgraph": "支付校验",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 1,
+          "lineEnd": 4,
+          "symbol": "chargeCard",
+          "note": "未提供支付令牌时拒绝支付。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "支付协作方负责在令牌和金额有效时创建授权结果。",
+        "segments": [
+          {
+            "kind": "schema",
+            "title": "接口输入",
+            "headers": [
+              "参数",
+              "用途"
+            ],
+            "rows": [
+              [
+                "paymentToken",
+                "支付令牌校验"
+              ],
+              [
+                "amountCents",
+                "正数金额校验与引用号生成"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n9",
+      "title": "传递支付金额",
+      "category": "支付校验",
+      "subgraph": "支付校验",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 5,
+          "lineEnd": 7,
+          "symbol": "chargeCard",
+          "note": "支付金额不为正时拒绝支付。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "支付金额直接来自库存保留返回的 totalCents。",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "数据交接",
+            "headers": [
+              "来源",
+              "目标",
+              "传递值"
+            ],
+            "rows": [
+              [
+                "reservation",
+                "charge",
+                "reservation.totalCents"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n10",
+      "title": "授权支付",
+      "category": "支付",
+      "subgraph": "支付授权",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 1,
+          "lineEnd": 7,
+          "symbol": "chargeCard",
+          "note": "构建已接受响应前会先执行令牌和正金额校验。",
+          "state": "verified"
+        },
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 8,
+          "lineEnd": 11,
+          "symbol": "chargeCard",
+          "note": "成功路径返回 accepted 状态及由 amountCents 确定的引用号。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "两个前提满足时，支付接口返回可用于收据的授权结果。",
+        "segments": [
+          {
+            "kind": "schema",
+            "title": "成功结果",
+            "headers": [
+              "字段",
+              "值",
+              "作用"
+            ],
+            "rows": [
+              [
+                "status",
+                "accepted",
+                "成功授权状态"
+              ],
+              [
+                "reference",
+                "demo-${amountCents}",
+                "收据中的支付引用号"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n11",
+      "title": "生成收据",
+      "category": "展示",
+      "subgraph": "收据交付",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "receipt-renderer.js",
+          "lineStart": 1,
+          "lineEnd": 8,
+          "symbol": "makeReceipt",
+          "note": "构建收据行，并继续传递支付状态和引用号。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "收据模型汇集订单标识、商品行与支付结果。",
+        "segments": [
+          {
+            "kind": "schema",
+            "title": "收据字段",
+            "headers": [
+              "字段",
+              "来源"
+            ],
+            "rows": [
+              [
+                "orderId",
+                "输入订单"
+              ],
+              [
+                "lines",
+                "规范化商品"
+              ],
+              [
+                "paymentStatus",
+                "支付结果"
+              ],
+              [
+                "paymentReference",
+                "支付结果"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n12",
+      "title": "格式化文本收据",
+      "category": "展示",
+      "subgraph": "收据交付",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "receipt-renderer.js",
+          "lineStart": 11,
+          "lineEnd": 12,
+          "symbol": "toPlainText",
+          "note": "将收据模型转换为可打印的纯文本。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "文本格式化是独立的辅助函数，不由 createOrder 直接调用。",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "文本输出",
+            "headers": [
+              "组成",
+              "格式"
+            ],
+            "rows": [
+              [
+                "首行",
+                "Order 加订单号"
+              ],
+              [
+                "后续行",
+                "每项商品一行"
+              ],
+              [
+                "连接方式",
+                "换行符"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n13",
+      "title": "退款路径",
+      "category": "可选恢复",
+      "subgraph": "后续选项",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 14,
+          "lineEnd": 16,
+          "symbol": "refundCard",
+          "note": "存在退款辅助函数，但订单流程没有调用它。",
+          "state": "inferred"
+        }
+      ],
+      "detail": {
+        "summary": "退款函数存在，但订单成功路径没有连接到它。",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "证据边界",
+            "headers": [
+              "已知事实",
+              "不能据此断言"
+            ],
+            "rows": [
+              [
+                "refundCard 可返回 refunded",
+                "创建订单会自动退款"
+              ],
+              [
+                "函数接收 reference",
+                "它属于当前订单流程的恢复步骤"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "n14",
+      "title": "订单生命周期审计",
+      "category": "未来集成",
+      "subgraph": "横切审计",
+      "claimState": "unconfirmed",
+      "evidence": [
+        {
+          "path": "receipt-renderer.js",
+          "symbol": "makeReceipt",
+          "note": "示例模块中没有会员积分持久化代码。",
+          "state": "unconfirmed"
+        }
+      ],
+      "detail": {
+        "summary": "订单创建后是否记录横切生命周期审计，在当前示例中没有证据。",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "安全解读",
+            "headers": [
+              "可以得出",
+              "不能得出"
+            ],
+            "rows": [
+              [
+                "审计是待补充的集成边界",
+                "已经保存了审计记录"
+              ],
+              [
+                "当前源码未包含该能力",
+                "系统完全不需要审计"
+              ]
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "label": "解析协作方",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 6,
+          "lineEnd": 8,
+          "symbol": "createOrder",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n1",
+      "to": "n3",
+      "label": "并行规范化商品",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 9,
+          "lineEnd": 9,
+          "symbol": "createOrder",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n2",
+      "to": "n4",
+      "label": "选择库存协作方",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 10,
+          "lineEnd": 10,
+          "symbol": "reserveIngredients",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n3",
+      "to": "n5",
+      "label": "开始可用性策略校验",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 11,
+          "lineEnd": 13,
+          "symbol": "reserveIngredients",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n4",
+      "to": "n6",
+      "label": "准备库存预留",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 14,
+          "lineEnd": 14,
+          "symbol": "reserveIngredients",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n5",
+      "to": "n7",
+      "label": "计算含可用性的总额",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 15,
+          "lineEnd": 17,
+          "symbol": "reserveIngredients",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "label": "确认可预留",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 15,
+          "lineEnd": 17,
+          "symbol": "reserveIngredients",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "label": "提供规范化商品",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 9,
+          "lineEnd": 10,
+          "symbol": "createOrder",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n2",
+      "to": "n8",
+      "label": "选择支付协作方",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 2,
+          "lineEnd": 4,
+          "symbol": "chargeCard",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n3",
+      "to": "n9",
+      "label": "计算预计支付金额",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 11,
+          "lineEnd": 11,
+          "symbol": "createOrder",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n8",
+      "to": "n10",
+      "label": "支付令牌有效",
+      "labelKind": "condition",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 8,
+          "lineEnd": 11,
+          "symbol": "chargeCard",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n9",
+      "to": "n10",
+      "label": "支付金额有效",
+      "labelKind": "condition",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 8,
+          "lineEnd": 11,
+          "symbol": "chargeCard",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n6",
+      "to": "n10",
+      "label": "库存预留就绪",
+      "labelKind": "condition",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 14,
+          "lineEnd": 17,
+          "symbol": "reserveIngredients",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n7",
+      "to": "n10",
+      "label": "总额可用于支付",
+      "labelKind": "condition",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 10,
+          "lineEnd": 11,
+          "symbol": "createOrder",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n10",
+      "to": "n11",
+      "label": "返回支付结果",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 12,
+          "lineEnd": 12,
+          "symbol": "createOrder",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n11",
+      "to": "n12",
+      "label": "输出为文本",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "receipt-renderer.js",
+          "lineStart": 11,
+          "lineEnd": 12,
+          "symbol": "toPlainText",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "n10",
+      "to": "n13",
+      "label": "可能退款",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 14,
+          "lineEnd": 16,
+          "symbol": "refundCard",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n1",
+      "to": "n14",
+      "label": "可能开启生命周期审计",
+      "claimState": "unconfirmed",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "symbol": "createOrder",
+          "state": "unconfirmed"
+        }
+      ]
+    }
+  ]
+}
+

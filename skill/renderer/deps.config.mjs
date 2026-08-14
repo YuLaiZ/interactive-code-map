@@ -1,11 +1,10 @@
 /**
  * 浏览器运行时依赖 profile：精确版本、固定来源顺序及每个响应字节的 SRI。
  *
- * `global` 是默认的全球 profile。`china-friendly` 仅为 React / ReactDOM
- * 增加经验证的 staticfile 首源与 bootcdn 末位；Mermaid 11.16.1 未验证到
- * 可用且字节一致的中国大陆镜像，因此仍使用 jsDelivr → unpkg。
+ * `global` 是默认的全球 profile。`china-friendly` 为全部依赖增加经验证的
+ * npmmirror 首源；React / ReactDOM 还保留 staticfile 与 bootcdn 后备来源。
  *
- * HTTP 200 与 SRI 采集日期：2026-08-13。新增来源必须同步扩展
+ * HTTP 200、CORS 与 SRI 采集日期：2026-08-14。新增来源必须同步扩展
  * tests/build/deps-config.test.mjs 的白名单、顺序和 SRI 断言。
  */
 const REACT_SRI = 'sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z';
@@ -63,6 +62,7 @@ const CHINA_FRIENDLY_DEPS = [
     name: 'react',
     version: '18.3.1',
     sources: [
+      source('https://registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js', REACT_SRI),
       source('https://cdn.staticfile.org/react/18.3.1/umd/react.production.min.js', REACT_SRI),
       ...GLOBAL_DEPS[0].sources,
       source('https://cdn.bootcdn.net/ajax/libs/react/18.3.1/umd/react.production.min.js', REACT_SRI),
@@ -72,12 +72,20 @@ const CHINA_FRIENDLY_DEPS = [
     name: 'react-dom',
     version: '18.3.1',
     sources: [
+      source('https://registry.npmmirror.com/react-dom/18.3.1/files/umd/react-dom.production.min.js', REACT_DOM_SRI),
       source('https://cdn.staticfile.org/react-dom/18.3.1/umd/react-dom.production.min.js', REACT_DOM_SRI),
       ...GLOBAL_DEPS[1].sources,
       source('https://cdn.bootcdn.net/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js', REACT_DOM_SRI),
     ],
   },
-  GLOBAL_DEPS[2],
+  {
+    name: 'mermaid',
+    version: '11.16.1',
+    sources: [
+      source('https://registry.npmmirror.com/mermaid/11.16.1/files/dist/mermaid.min.js', MERMAID_SRI),
+      ...GLOBAL_DEPS[2].sources,
+    ],
+  },
 ];
 
 export const DEFAULT_CDN_PROFILE = 'global';

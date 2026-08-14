@@ -67,7 +67,9 @@ console.log('== renderHtml 基本生成 ==');
     assert(html.includes('<html'), 'HTML 含 <html> 根');
     assert(html.includes('<title>t</title>'), 'MapSpec 标题写入 HTML title');
     assert(html.includes('Node1'), 'HTML 内联 MapSpec 节点标题');
-    assert(!['__ICM_DOCUMENT_TITLE__', '__ICM_STYLES_CSS__', '__ICM_RENDER_JS__', '__ICM_MAPSPEC_JSON__', '__ICM_DEPS_CONFIG_JSON__'].some((token) => html.includes(token)), '所有模板占位符均被替换');
+    assert(!['__ICM_DOCUMENT_LANG__', '__ICM_DOCUMENT_TITLE__', '__ICM_GRAPH_VIEWPORT_LABEL__', '__ICM_FAILURE_HEADING__', '__ICM_FAILURE_SUMMARY__', '__ICM_FAILURE_RETRY__', '__ICM_STYLES_CSS__', '__ICM_RENDER_JS__', '__ICM_MAPSPEC_JSON__', '__ICM_DEPS_CONFIG_JSON__'].some((token) => html.includes(token)), '所有模板占位符均被替换');
+  assert(html.includes('<html lang="en">') && html.includes('aria-label="Interactive code map"'), '英文产物使用英文文档语言与图谱区域名称');
+  assert(html.includes('<h1>Failed to load dependencies</h1>') && html.includes('Check your network connection and try again later.'), '英文产物使用英文依赖失败页');
   assert(!html.includes(tmp) && !html.includes('/Users/'), 'HTML 不含 repoRoot 或用户绝对路径');
   assert(html.includes('Click a card for details'), '英文产物含面向读者的卡片详情提示');
   assert(html.includes("controls: 'Controls'") && html.includes("escapeAction: 'close'"), '英文产物含键盘操作说明');
@@ -76,9 +78,15 @@ console.log('== renderHtml 基本生成 ==');
   const chineseSpec = baseSpec();
   chineseSpec.meta.uiLocale = 'zh-CN';
   const chineseHtml = renderHtml(chineseSpec, { repoRoot: tmp });
+  assert(chineseHtml.includes('<html lang="zh-CN">') && chineseHtml.includes('aria-label="交互式代码图谱"'), '中文产物使用中文文档语言与图谱区域名称');
+  assert(chineseHtml.includes('<h1>依赖加载失败</h1>') && chineseHtml.includes('请检查网络连接后稍后重试。'), '中文产物使用中文依赖失败页');
   assert(chineseHtml.includes('点击图中卡片查看详情'), '中文产物本地化卡片详情提示');
   assert(chineseHtml.includes("controls: '操作'") && chineseHtml.includes("escapeAction: '关闭'"), '中文产物含键盘操作说明');
   assert(chineseHtml.includes("fit: '全图'") && chineseHtml.includes("fitAriaLabel: '缩放至完整图谱'"), '中文产物使用明确的全图缩放文案');
+  const legacyChineseSpec = baseSpec();
+  legacyChineseSpec.meta.languageProfile = 'zh-CN';
+  const legacyChineseHtml = renderHtml(legacyChineseSpec, { repoRoot: tmp });
+  assert(legacyChineseHtml.includes('<html lang="zh-CN">') && legacyChineseHtml.includes('<h1>依赖加载失败</h1>'), '旧版中文 MapSpec 的静态页面仍保持中文');
     const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]);
     const rendererScript = scripts.at(-1);
     let parseError = null;
@@ -91,6 +99,26 @@ console.log('== renderHtml 基本生成 ==');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
+}
+
+console.log('\n== 已提交的双语 demo ==');
+{
+  const demoRepoRoot = path.join(repoRoot, 'examples', 'demo', 'sample-repo');
+  const chineseDemoSpec = JSON.parse(readFileSync(
+    path.join(repoRoot, 'examples', 'demo', 'expected-mapspec.zh-CN.json'),
+    'utf8',
+  ));
+  const chineseDemoHtml = renderHtml(chineseDemoSpec, { repoRoot: demoRepoRoot, cdnProfile: 'china-friendly' });
+  const checkedInChineseDemoHtml = readFileSync(
+    path.join(repoRoot, 'examples', 'demo', 'expected-output.zh-CN.html'),
+    'utf8',
+  );
+  assert(chineseDemoSpec.meta.uiLocale === 'zh-CN', '中文 demo 显式指定 zh-CN 固定 UI');
+  assert(chineseDemoHtml.includes('<html lang="zh-CN">') && chineseDemoHtml.includes('<h1>依赖加载失败</h1>'), '中文 demo 的文档语言与失败页均本地化');
+  assert(chineseDemoHtml.includes('<title>咖啡柜台订单流程</title>'), '中文 demo 使用中文页面标题');
+  assert(chineseDemoHtml.includes('点击图中卡片查看详情') && chineseDemoHtml.includes('证据状态'), '中文 demo 的固定 UI 全部本地化');
+  assert(chineseDemoHtml.includes('registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js'), '中文 demo 使用 npmmirror React 首源');
+  assert(checkedInChineseDemoHtml.includes('registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js'), '已提交中文 HTML 保持 npmmirror 首源');
 }
 
 console.log('\n== </script> 注入防护 ==');
@@ -147,7 +175,8 @@ console.log('\n== CDN profile 注入 ==');
     const depsMatch = html.match(/window\.__ICM_DEPS_CONFIG__ = (\[[\s\S]*?\]);/);
     const embedded = depsMatch ? JSON.parse(depsMatch[1]) : null;
     assert(JSON.stringify(embedded) === JSON.stringify(CDN_PROFILES['china-friendly']), 'china-friendly profile 被完整注入 HTML');
-    assert(html.includes('cdn.staticfile.org/react/18.3.1'), 'china-friendly React 首源写入 HTML');
+    assert(html.includes('registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js'), 'china-friendly React 首源写入 HTML');
+    assert(html.includes('cdn.staticfile.org/react/18.3.1'), 'china-friendly React 保留 staticfile 回退');
     assert(html.includes('cdn.bootcdn.net/ajax/libs/react/18.3.1'), 'china-friendly React 末位回退写入 HTML');
     const defaultHtml = renderHtml(baseSpec(), { repoRoot: tmp });
     assert(!defaultHtml.includes('cdn.staticfile.org/react/18.3.1'), '默认 global profile 不注入 china-friendly 来源');
@@ -301,7 +330,7 @@ console.log('\n== CLI ⑨ CDN profile ==');
     const selectedHtml = readFileSync(path.join(tmp, 'cn.html'), 'utf8');
     const rejected = runCli(['--in', 'spec.json', '--out', 'bad.html', '--repo-root', tmp, '--cdn-profile', 'fastest'], tmp);
     const missingValue = runCli(['--in', 'spec.json', '--out', 'missing.html', '--repo-root', tmp, '--cdn-profile'], tmp);
-    assert(selected.code === 0 && selectedHtml.includes('cdn.staticfile.org/react/18.3.1'), '--cdn-profile china-friendly 生成对应 HTML');
+    assert(selected.code === 0 && selectedHtml.includes('registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js'), '--cdn-profile china-friendly 生成 npmmirror 首源');
     assert(rejected.code !== 0 && !existsSync(path.join(tmp, 'bad.html')), '未知 --cdn-profile 拒绝且不写产物');
     assert(missingValue.code !== 0 && !existsSync(path.join(tmp, 'missing.html')) && missingValue.stderr.includes('参数 --cdn-profile 缺少值'), '--cdn-profile 缺值明确拒绝且不写产物');
   } finally {

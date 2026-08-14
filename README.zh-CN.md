@@ -6,7 +6,8 @@
 
 ## 在线 Demo
 
-直接体验原创示例：[yulaiz.github.io/interactive-code-map](https://yulaiz.github.io/interactive-code-map/)。
+- [中文 Demo](https://yulaiz.github.io/interactive-code-map/zh-CN/)
+- [English demo](https://yulaiz.github.io/interactive-code-map/en/)
 
 ## 安装
 
@@ -45,7 +46,7 @@ node skill/renderer/build-html.mjs \
 ### CDN 交付 profile
 
 - `global`（默认）：所有依赖均按 jsDelivr → unpkg 回退。
-- `china-friendly`：React 与 ReactDOM 按 staticfile → jsDelivr → unpkg → bootcdn 回退；固定版本 Mermaid 尚无通过字节一致性验证的中国大陆镜像，继续按 jsDelivr → unpkg 回退。
+- `china-friendly`：React 与 ReactDOM 按 npmmirror → staticfile → jsDelivr → unpkg → bootcdn 回退；Mermaid 按 npmmirror → jsDelivr → unpkg 回退。
 
 只有用户明确偏好中国大陆访问，或明确目标受众在中国大陆时，才选择 `china-friendly`。用户语言本身不足以决定 profile；只有构建环境能代表目标用户、且用户同意联网探测时，才适合根据实际速度选择。每个已配置来源均使用 HTTPS、固定版本、SRI 校验、8 秒超时，且只作为有序回退源。
 
@@ -53,15 +54,23 @@ node skill/renderer/build-html.mjs \
 
 ### 图内操作说明
 
-每份生成图谱都有固定且本地化的三段说明：阅读说明、证据状态与操作。操作段会显示主要交互：点击卡片查看详情；使用 `Tab` 选择卡片，`Enter` 打开，`Esc` 关闭详情面板。节点也支持空格作为等价的按钮操作。上文的生成前确认仍决定键盘与小视口能力是否属于本次交付的验收范围。
+每份生成图谱都有固定且本地化的三段说明：阅读说明、证据状态与操作。操作段会显示主要交互：点击卡片查看详情；使用 `Tab` 选择卡片，`Enter` 打开，`Esc` 关闭详情面板。节点也支持空格作为等价的按钮操作。生成 HTML 的文档语言、图谱区域名称与依赖加载失败页也使用同一语言。上文的生成前确认仍决定键盘与小视口能力是否属于本次交付的验收范围。
 
-可直接查看原创示例：[examples/demo/expected-mapspec.json](examples/demo/expected-mapspec.json)、其小型示例源目录以及 [examples/demo/expected-output.html](examples/demo/expected-output.html)。可用以下命令重新生成已提交的 HTML：
+可直接查看原创的[英文 MapSpec](examples/demo/expected-mapspec.json)与[中文 MapSpec](examples/demo/expected-mapspec.zh-CN.json)。两者共享同一个小型示例源码目录、图谱结构、断言状态和证据数据；仅图谱读者可见文案与固定 UI 按语言本地化。英文 Demo 使用 `global`；中文 Demo 明确面向中国大陆访问者，使用 `china-friendly`。可用以下命令重新生成已提交的 HTML：
 
 ~~~bash
 node skill/renderer/build-html.mjs \
   --in examples/demo/expected-mapspec.json \
   --out examples/demo/expected-output.html \
   --repo-root examples/demo/sample-repo
+~~~
+
+~~~bash
+node skill/renderer/build-html.mjs \
+  --in examples/demo/expected-mapspec.zh-CN.json \
+  --out examples/demo/expected-output.zh-CN.html \
+  --repo-root examples/demo/sample-repo \
+  --cdn-profile china-friendly
 ~~~
 
 ## 原则

@@ -27,8 +27,10 @@ jobs:
       - uses: actions/configure-pages@v5
       - name: Prepare demo artifact
         run: |
-          mkdir --parents _site
-          cp examples/demo/expected-output.html _site/index.html
+          mkdir --parents _site/en _site/zh-CN
+          cp examples/demo/landing.html _site/index.html
+          cp examples/demo/expected-output.html _site/en/index.html
+          cp examples/demo/expected-output.zh-CN.html _site/zh-CN/index.html
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site

@@ -135,17 +135,52 @@ for (const [name, spec, expected] of [
   assert(ajvOk && validatorOk, '浏览器 fixture：显式放行测试标记后两者都通过');
 }
 
-{
-  const demoFixture = path.join(repoRoot, 'examples', 'demo', 'expected-mapspec.json');
+for (const demoName of ['expected-mapspec.json', 'expected-mapspec.zh-CN.json']) {
+  const demoFixture = path.join(repoRoot, 'examples', 'demo', demoName);
   if (!existsSync(demoFixture)) {
-    assert(false, 'demo fixture 缺失');
+    assert(false, demoName + '：demo fixture 缺失');
   } else {
     const spec = JSON.parse(readFileSync(demoFixture, 'utf8'));
     assert(
       ajvAccepts(demoFixture) && validateMapSpec(spec).length === 0,
-      'demo fixture：Schema 与共享校验器都通过',
+      demoName + '：Schema 与共享校验器都通过',
     );
   }
+}
+
+{
+  const english = JSON.parse(readFileSync(
+    path.join(repoRoot, 'examples', 'demo', 'expected-mapspec.json'),
+    'utf8',
+  ));
+  const chinese = JSON.parse(readFileSync(
+    path.join(repoRoot, 'examples', 'demo', 'expected-mapspec.zh-CN.json'),
+    'utf8',
+  ));
+  const evidenceShape = (evidence) => evidence.map(({ path: evidencePath, lineStart, lineEnd, symbol, state }) => ({
+    path: evidencePath,
+    lineStart,
+    lineEnd,
+    symbol,
+    state,
+  }));
+  const nodeShape = (node) => ({
+    id: node.id,
+    claimState: node.claimState,
+    evidence: evidenceShape(node.evidence),
+  });
+  const edgeShape = (edge) => ({
+    from: edge.from,
+    to: edge.to,
+    labelKind: edge.labelKind,
+    claimState: edge.claimState,
+    evidence: evidenceShape(edge.evidence),
+  });
+  assert(
+    JSON.stringify(english.nodes.map(nodeShape)) === JSON.stringify(chinese.nodes.map(nodeShape))
+      && JSON.stringify(english.edges.map(edgeShape)) === JSON.stringify(chinese.edges.map(edgeShape)),
+    '双语 demo 的节点、连线、状态与证据数据保持一致，仅本地化读者可见文案',
+  );
 }
 
 console.log('\n结果: ' + pass + ' 通过，' + fail + ' 失败');

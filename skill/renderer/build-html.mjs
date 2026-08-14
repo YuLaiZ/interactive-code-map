@@ -85,6 +85,36 @@ function escapeHtmlText(value) {
     .replace(/'/g, '&#39;');
 }
 
+// 构建期静态文案须与 renderer 的 uiLocaleForSpec 保持同一兼容规则：
+// 旧版中文 MapSpec 尚未声明 uiLocale 时，仍按 languageProfile 输出中文页面。
+function uiLocaleForMapSpec(mapSpec) {
+  const meta = mapSpec && mapSpec.meta || {};
+  if (meta.uiLocale === 'zh-CN') return 'zh-CN';
+  if (meta.uiLocale === 'en') return 'en';
+  return String(meta.languageProfile || '').trim().toLowerCase().replace(/_/g, '-') === 'zh-cn'
+    ? 'zh-CN'
+    : 'en';
+}
+
+function staticCopyForLocale(locale) {
+  if (locale === 'zh-CN') {
+    return {
+      documentLang: 'zh-CN',
+      graphViewportLabel: '交互式代码图谱',
+      failureHeading: '依赖加载失败',
+      failureSummary: '此代码图谱需要从 CDN 加载 React 和 Mermaid。所有已配置来源均因网络、超时或完整性错误而未能加载。',
+      failureRetry: '请检查网络连接后稍后重试。',
+    };
+  }
+  return {
+    documentLang: 'en',
+    graphViewportLabel: 'Interactive code map',
+    failureHeading: 'Failed to load dependencies',
+    failureSummary: 'This code map requires React and Mermaid from a CDN. All configured sources failed to load because of a network, timeout, or integrity error.',
+    failureRetry: 'Check your network connection and try again later.',
+  };
+}
+
 function replaceToken(documentText, token, value) {
   if (!documentText.includes(token)) {
     throw new Error(`模板缺少占位符: ${token}`);
@@ -115,6 +145,7 @@ export function renderHtml(mapSpec, options = {}) {
     throw new Error(`MapSpec 校验失败:\n  - ${errors.join('\n  - ')}`);
   }
   const dependencies = resolveDependencyProfile(cdnProfile);
+  const staticCopy = staticCopyForLocale(uiLocaleForMapSpec(mapSpec));
 
   const rendererScript = [
     stripModuleSyntax(encoderSource, 'mermaid-encoder.mjs'),
@@ -123,7 +154,12 @@ export function renderHtml(mapSpec, options = {}) {
   ].join('\n');
 
   let html = template;
+  html = replaceToken(html, '__ICM_DOCUMENT_LANG__', staticCopy.documentLang);
   html = replaceToken(html, '__ICM_DOCUMENT_TITLE__', escapeHtmlText(mapSpec.meta.title));
+  html = replaceToken(html, '__ICM_GRAPH_VIEWPORT_LABEL__', escapeHtmlText(staticCopy.graphViewportLabel));
+  html = replaceToken(html, '__ICM_FAILURE_HEADING__', escapeHtmlText(staticCopy.failureHeading));
+  html = replaceToken(html, '__ICM_FAILURE_SUMMARY__', escapeHtmlText(staticCopy.failureSummary));
+  html = replaceToken(html, '__ICM_FAILURE_RETRY__', escapeHtmlText(staticCopy.failureRetry));
   html = replaceToken(html, '__ICM_STYLES_CSS__', safeForStyle(styles));
   html = replaceToken(html, '__ICM_RENDER_JS__', safeForScript(rendererScript));
   html = replaceToken(html, '__ICM_MAPSPEC_JSON__', safeForScript(JSON.stringify(mapSpec)));
