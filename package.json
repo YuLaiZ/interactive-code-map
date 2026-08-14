@@ -1,6 +1,6 @@
 {
   "name": "interactive-code-map",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A cross-client skill that turns codebase evidence into a single interactive HTML code map.",
   "author": "YuLaiZ",
   "license": "MIT",
