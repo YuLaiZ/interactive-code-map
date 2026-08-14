@@ -281,11 +281,32 @@
     return null;
   }
 
+  function addNodeEvidenceMarker(nodeElement, node, locale) {
+    const existing = nodeElement.querySelector('.icm-node-evidence-marker');
+    if (existing) existing.remove();
+    const rect = nodeElement.querySelector('rect');
+    if (!rect) return;
+    const box = rect.getBBox();
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    marker.classList.add('icm-node-evidence-marker', 'icm-node-evidence-' + node.claimState);
+    marker.setAttribute('data-claim-state', node.claimState);
+    marker.setAttribute('cx', String(box.x + 9));
+    marker.setAttribute('cy', String(box.y + 9));
+    marker.setAttribute('r', '5');
+    marker.setAttribute('aria-hidden', 'true');
+    marker.setAttribute('pointer-events', 'none');
+    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    title.textContent = claimStateLabel(locale, node.claimState);
+    marker.appendChild(title);
+    nodeElement.appendChild(marker);
+  }
+
   function bindNodeEvents(svgEl, spec) {
     const nodesById = new Map(spec.nodes.map(function mapNode(node) {
       return [node.id, node];
     }));
     const toneBySubgraph = buildSubgraphToneMap(spec);
+    const locale = uiLocaleForSpec(spec);
     boundNodeElements = [];
     for (const nodeElement of svgEl.querySelectorAll('g.node')) {
       const nodeId = extractNodeId(nodeElement.id || '', nodeElement, nodesById);
@@ -296,9 +317,10 @@
       nodeElement.setAttribute('data-claim-state', node.claimState);
       nodeElement.setAttribute('tabindex', '0');
       nodeElement.setAttribute('role', 'button');
-      nodeElement.setAttribute('aria-label', node.title);
+      nodeElement.setAttribute('aria-label', node.title + ' — ' + claimStateLabel(locale, node.claimState));
       nodeElement.setAttribute('aria-pressed', 'false');
       nodeElement.classList.add('icm-node-state-' + node.claimState);
+      addNodeEvidenceMarker(nodeElement, node, locale);
       if (node.category) {
         nodeElement.setAttribute('data-category', node.category);
       }

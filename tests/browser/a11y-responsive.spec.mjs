@@ -26,6 +26,26 @@ test('键盘可聚焦节点、打开详情、关闭并恢复焦点', async ({ pa
   await expect(page.locator('g.node[data-node-id="' + focusedNodeId + '"]')).toBeFocused();
 });
 
+test('空格键可打开节点详情并在关闭后恢复焦点', async ({ page }) => {
+  await page.goto(demoUrl);
+  let focusedNodeId = null;
+  for (let index = 0; index < 12; index += 1) {
+    await page.keyboard.press('Tab');
+    focusedNodeId = await page.evaluate(() => {
+      const active = document.activeElement;
+      return active?.matches('g.node[data-node-id]') ? active.getAttribute('data-node-id') : null;
+    });
+    if (focusedNodeId) break;
+  }
+  expect(focusedNodeId).toBeTruthy();
+  await page.keyboard.press('Space');
+  await expect(page.locator('#detail-panel')).toBeVisible();
+  await expect(page.locator('#detail-panel')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#detail-panel')).toHaveCount(0);
+  await expect(page.locator('g.node[data-node-id="' + focusedNodeId + '"]')).toBeFocused();
+});
+
 test('桌面端详情是比例克制的右侧详情窗', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(demoUrl);

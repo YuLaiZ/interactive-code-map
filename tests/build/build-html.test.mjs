@@ -104,6 +104,10 @@ console.log('== renderHtml 基本生成 ==');
 console.log('\n== 已提交的双语 demo ==');
 {
   const demoRepoRoot = path.join(repoRoot, 'examples', 'demo', 'sample-repo');
+  const englishDemoSpec = JSON.parse(readFileSync(
+    path.join(repoRoot, 'examples', 'demo', 'expected-mapspec.json'),
+    'utf8',
+  ));
   const chineseDemoSpec = JSON.parse(readFileSync(
     path.join(repoRoot, 'examples', 'demo', 'expected-mapspec.zh-CN.json'),
     'utf8',
@@ -113,12 +117,19 @@ console.log('\n== 已提交的双语 demo ==');
     path.join(repoRoot, 'examples', 'demo', 'expected-output.zh-CN.html'),
     'utf8',
   );
+  const checkedInEnglishDemoHtml = readFileSync(
+    path.join(repoRoot, 'examples', 'demo', 'expected-output.html'),
+    'utf8',
+  );
+  const englishDemoHtml = renderHtml(englishDemoSpec, { repoRoot: demoRepoRoot, cdnProfile: 'global' });
   assert(chineseDemoSpec.meta.uiLocale === 'zh-CN', '中文 demo 显式指定 zh-CN 固定 UI');
   assert(chineseDemoHtml.includes('<html lang="zh-CN">') && chineseDemoHtml.includes('<h1>依赖加载失败</h1>'), '中文 demo 的文档语言与失败页均本地化');
   assert(chineseDemoHtml.includes('<title>咖啡柜台订单流程</title>'), '中文 demo 使用中文页面标题');
   assert(chineseDemoHtml.includes('点击图中卡片查看详情') && chineseDemoHtml.includes('证据状态'), '中文 demo 的固定 UI 全部本地化');
   assert(chineseDemoHtml.includes('registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js'), '中文 demo 使用 npmmirror React 首源');
   assert(checkedInChineseDemoHtml.includes('registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js'), '已提交中文 HTML 保持 npmmirror 首源');
+  assert(englishDemoHtml === checkedInEnglishDemoHtml, '已提交英文 HTML 可由当前 renderer 无漂移重建');
+  assert(chineseDemoHtml === checkedInChineseDemoHtml, '已提交中文 HTML 可由当前 renderer 无漂移重建');
 }
 
 console.log('\n== </script> 注入防护 ==');

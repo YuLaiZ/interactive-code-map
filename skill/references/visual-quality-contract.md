@@ -5,7 +5,7 @@ Apply this contract to every multi-group MapSpec and to every visual revision. I
 ## Semantic vocabulary
 
 - **Group:** a bounded business scope. Give every group a distinct tone and keep its title as a compact, centered top tab inside the group frame.
-- **Node:** an actionable or meaningful system step. Keep nodes in their group's tone and use evidence state only for the node border/state treatment.
+- **Node:** an actionable or meaningful system step. Keep nodes in their group's tone; show evidence state with both the node border treatment and a compact, legend-matched status dot in the card's upper-left corner.
 - **Condition:** a labelled branch or prerequisite. Use the diamond condition marker and the condition label treatment; do not style it as a node.
 - **Action relationship:** a cross-group transfer or effect. Use the directional marker and action label treatment.
 - **Internal relationship:** a relation between nodes in the same group. Give its label a compact rounded frame so it is not mistaken for node text or a cross-group action.
@@ -46,7 +46,7 @@ Inspect an actual generated complex graph before declaring visual acceptance. Ch
 2. label ownership, collision avoidance, and leader length;
 3. group-frame size, title containment, and first-node clearance;
 4. hover feedback for condition, action, and internal relationships;
-5. localized copy in the reading guide, evidence status, controls guide, and detail panel; and
+5. localized copy in the reading guide, evidence status, controls guide, and detail panel, plus a visible upper-left status dot on every node that matches the legend; and
 6. initial `Fit` and the Fit control with all three guide sections visible.
 
 When a visual defect is found, reproduce it with a focused browser regression before changing the renderer. Regenerate both the representative Demo and the requested business artifact from the same renderer, then run the full test suite.

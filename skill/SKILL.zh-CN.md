@@ -11,7 +11,7 @@
 3. 选择 CDN 交付 profile。默认使用 `global`；只有用户明确偏好中国大陆访问，或明确目标受众位于中国大陆时，才使用 `china-friendly`。对话语言只是弱信号，不是位置事实。只有当前环境能代表目标用户、且用户同意联网探测时，才可采用实际测速。只能选择随包提供的 profile；不得自行添加 CDN URL 或绕过 SRI。报告所选 profile 及理由。
 4. 仅在该边界内检查代码。将每项 MapSpec 断言标记为 verified、inferred 或 unconfirmed。
 5. 形成 MapSpec。以 [`mapspec-v1.schema.json`](references/mapspec-v1.schema.json) 为权威结构。每条 verified 证据都必须具有真实的相对路径和已检查的行范围。
-   对每个交付图谱明确设置可选字段 `meta.uiLocale`：英文 Demo 使用 `en`；用户以中文沟通且未要求英文产物时默认使用 `zh-CN`。文档语言、图谱区域名称、依赖加载失败页、阅读说明、关系图例、条件标记、证据状态与操作说明等 renderer 固定 UI 文案必须全部随此字段一致切换，禁止出现中英混杂。`languageProfile` 只描述代码或业务来源，不决定 UI 语言。节点、分组与边的业务原文保持输入语言，除非用户明确要求翻译业务内容。
+   对每个交付图谱明确设置可选字段 `meta.uiLocale`：英文 Demo 使用 `en`；用户以中文沟通且未要求英文产物时默认使用 `zh-CN`。文档语言、图谱区域名称、依赖加载失败页、阅读说明、关系图例、条件标记、证据状态与操作说明等 renderer 固定 UI 文案必须全部随此字段一致切换，禁止出现中英混杂。每个节点还必须通过 renderer 左上角、与图例一致的小状态点和边框样式直接呈现本地化断言状态。`languageProfile` 只描述代码或业务来源，不决定 UI 语言。节点、分组与边的业务原文保持输入语言，除非用户明确要求翻译业务内容。
 6. 生成或修改多分组图谱前，阅读 [`visual-quality-contract.zh-CN.md`](references/visual-quality-contract.zh-CN.md)。按其中的关系语义、路由边界、标签放置、语言和视觉验收规则执行。不得通过不断叠加临时路由改动修补复杂图；保留 Mermaid 的节点到节点走廊，只做文档规定的局部处理。
 7. 校验并生成产物。先检查 `node --version` 是否至少为 20；若不是，报告需要 Node.js 20 或更高版本，并为用户保留 MapSpec，不要尝试生成。
 8. 报告生成的相对 HTML 路径、证据状态的限制、已确认的交互与 CDN profile，以及实际完成的任何浏览器人工验证。未实际检查时，不得报告浏览器行为已验证。

@@ -176,6 +176,10 @@ test('节点 ID、证据状态和视觉状态精确对应', async ({ page }) => 
       className: node.getAttribute('class') || '',
       stroke: style?.stroke || '',
       dash: style?.strokeDasharray || '',
+      markerState: node.querySelector('.icm-node-evidence-marker')?.getAttribute('data-claim-state'),
+      markerTitle: node.querySelector('.icm-node-evidence-marker title')?.textContent,
+      markerBox: node.querySelector('.icm-node-evidence-marker')?.getBoundingClientRect().toJSON(),
+      rectBox: rect?.getBoundingClientRect().toJSON(),
     };
   }));
 
@@ -184,6 +188,12 @@ test('节点 ID、证据状态和视觉状态精确对应', async ({ page }) => 
   expect(new Set(states.map((node) => node.state)).size).toBe(3);
   expect(new Set(states.map((node) => node.stroke + '/' + node.dash)).size).toBeGreaterThanOrEqual(3);
   expect(states.every((node) => node.className.includes('icm-node-state-' + node.state))).toBeTruthy();
+  expect(states.every((node) => node.markerState === node.state && node.markerTitle === node.state)).toBeTruthy();
+  expect(states.every((node) => node.markerBox && node.rectBox
+    && node.markerBox.left >= node.rectBox.left
+    && node.markerBox.top >= node.rectBox.top
+    && node.markerBox.right <= node.rectBox.left + node.rectBox.width / 3
+    && node.markerBox.bottom <= node.rectBox.top + node.rectBox.height / 2)).toBeTruthy();
 });
 
 test('分组标题与连线条件在深色画布上保持可读', async ({ page }) => {
