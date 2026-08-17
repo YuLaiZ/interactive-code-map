@@ -45,7 +45,7 @@ Inspect an actual generated complex graph before declaring visual acceptance. Ch
 1. dense fan-in and fan-out ports, crossings, and route continuity;
 2. label ownership, collision avoidance, and leader length;
 3. group-frame size, title containment, and first-node clearance;
-4. hover feedback for condition, action, and internal relationships;
+4. hover feedback for condition, action, and internal relationships, plus click-to-pin on any relationship line (single pin at a time, hover behavior unchanged, cleared by clicking the line again, pressing `Esc`, or a blank-area click that is not a canvas drag);
 5. localized copy in the reading guide, evidence status, controls guide, and detail panel, plus a visible upper-left status dot on every node that matches the legend; and
 6. initial `Fit` and the Fit control with all three guide sections visible.
 

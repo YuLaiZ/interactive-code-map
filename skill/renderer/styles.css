@@ -206,7 +206,10 @@ button:focus-visible,
   cursor: pointer;
 }
 
-#graph-canvas svg .icm-edge-path.icm-edge-hovered {
+/* 悬停（瞬态定位）与钉住（点击后的常驻标记）成对出现在同一条规则里：钉住态
+ * 刻意保持与悬停完全相同的视觉与动画，只靠“不随鼠标离开而消失”区分语义。 */
+#graph-canvas svg .icm-edge-path.icm-edge-hovered,
+#graph-canvas svg .icm-edge-path.icm-edge-pinned {
   stroke: #d4f7ff !important;
   stroke-width: 3.35px !important;
   stroke-dasharray: 10 5;
@@ -219,7 +222,9 @@ button:focus-visible,
 }
 
 #graph-canvas svg .edgeLabel.icm-action-edge-label.icm-edge-hovered foreignObject > div,
-#graph-canvas svg .edgeLabel.icm-condition-edge-label.icm-edge-hovered foreignObject > div {
+#graph-canvas svg .edgeLabel.icm-action-edge-label.icm-edge-pinned foreignObject > div,
+#graph-canvas svg .edgeLabel.icm-condition-edge-label.icm-edge-hovered foreignObject > div,
+#graph-canvas svg .edgeLabel.icm-condition-edge-label.icm-edge-pinned foreignObject > div {
   --icm-condition-border-angle: 0deg;
   border-color: #d7f8ff;
   /* 不再缩放条件框：密集区域会因为左右净空被吃掉而产生新的遮挡。内层深色面
@@ -264,7 +269,8 @@ button:focus-visible,
 
 /* Mermaid 会为普通组内文字生成一个矩形 labelBkg；跨组的条件/动作则已有自己的
  * foreignObject 胶囊。不能把前者的矩形高亮套到后者上，否则会盖住圆角外轮廓。 */
-#graph-canvas svg .edgeLabel.icm-edge-hovered:not(.icm-action-edge-label):not(.icm-condition-edge-label) rect.labelBkg {
+#graph-canvas svg .edgeLabel.icm-edge-hovered:not(.icm-action-edge-label):not(.icm-condition-edge-label) rect.labelBkg,
+#graph-canvas svg .edgeLabel.icm-edge-pinned:not(.icm-action-edge-label):not(.icm-condition-edge-label) rect.labelBkg {
   fill: #163d5e !important;
   stroke: #c9f4ff !important;
   stroke-width: 2px !important;
@@ -273,15 +279,27 @@ button:focus-visible,
   animation: icm-edge-flow 740ms linear infinite;
 }
 
-#graph-canvas svg .icm-edge-label-leader.icm-edge-hovered {
+#graph-canvas svg .icm-edge-label-leader.icm-edge-hovered,
+#graph-canvas svg .icm-edge-label-leader.icm-edge-pinned {
   stroke: #d4f5ff;
   stroke-width: 2.35px;
   animation: icm-edge-flow 740ms linear infinite;
 }
 
-#graph-canvas svg .icm-edge-label-anchor-dot.icm-edge-hovered {
+#graph-canvas svg .icm-edge-label-anchor-dot.icm-edge-hovered,
+#graph-canvas svg .icm-edge-label-anchor-dot.icm-edge-pinned {
   fill: #fff;
   filter: drop-shadow(0 0 3px rgb(111 201 255 / 82%));
+}
+
+/* 关系胶囊与节点卡片同为可聚焦按钮；焦点视觉沿用胶囊自身的描边增强。 */
+#graph-canvas svg g.edgeLabel[data-icm-hover-edge-id] {
+  outline: none;
+}
+
+#graph-canvas svg g.edgeLabel[data-icm-hover-edge-id]:focus-visible foreignObject > div {
+  outline: 2px solid #9fdbff !important;
+  outline-offset: 2px !important;
 }
 
 @keyframes icm-edge-flow {
@@ -294,10 +312,15 @@ button:focus-visible,
 
 @media (prefers-reduced-motion: reduce) {
   #graph-canvas svg .icm-edge-path.icm-edge-hovered,
+  #graph-canvas svg .icm-edge-path.icm-edge-pinned,
   #graph-canvas svg .edgeLabel.icm-action-edge-label.icm-edge-hovered foreignObject > div,
+  #graph-canvas svg .edgeLabel.icm-action-edge-label.icm-edge-pinned foreignObject > div,
   #graph-canvas svg .edgeLabel.icm-condition-edge-label.icm-condition-edge-hovered foreignObject > div,
+  #graph-canvas svg .edgeLabel.icm-condition-edge-label.icm-condition-edge-pinned foreignObject > div,
   #graph-canvas svg .edgeLabel.icm-edge-hovered:not(.icm-action-edge-label):not(.icm-condition-edge-label) rect.labelBkg,
-  #graph-canvas svg .icm-edge-label-leader.icm-edge-hovered {
+  #graph-canvas svg .edgeLabel.icm-edge-pinned:not(.icm-action-edge-label):not(.icm-condition-edge-label) rect.labelBkg,
+  #graph-canvas svg .icm-edge-label-leader.icm-edge-hovered,
+  #graph-canvas svg .icm-edge-label-leader.icm-edge-pinned {
     animation: none;
   }
 

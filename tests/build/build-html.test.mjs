@@ -81,6 +81,7 @@ console.log('== renderHtml 基本生成 ==');
   assert(chineseHtml.includes('<html lang="zh-CN">') && chineseHtml.includes('aria-label="交互式代码图谱"'), '中文产物使用中文文档语言与图谱区域名称');
   assert(chineseHtml.includes('<h1>依赖加载失败</h1>') && chineseHtml.includes('请检查网络连接后稍后重试。'), '中文产物使用中文依赖失败页');
   assert(chineseHtml.includes('点击图中卡片查看详情'), '中文产物本地化卡片详情提示');
+  assert(chineseHtml.includes('悬停可突出显示所属关系线；点击可钉住或取消'), '中文产物携带中文关系线 tooltip 文案');
   assert(chineseHtml.includes("controls: '操作'") && chineseHtml.includes("escapeAction: '关闭'"), '中文产物含键盘操作说明');
   assert(chineseHtml.includes("fit: '全图'") && chineseHtml.includes("fitAriaLabel: '缩放至完整图谱'"), '中文产物使用明确的全图缩放文案');
   const legacyChineseSpec = baseSpec();

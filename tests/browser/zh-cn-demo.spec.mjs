@@ -18,6 +18,10 @@ test('中文 Demo 使用中文固定 UI 与中文业务内容', async ({ page })
   await expect(page.locator('.icm-legend')).toContainText('操作');
   await expect(page.locator('g.node[data-node-id="n13"] .icm-node-evidence-marker')).toHaveAttribute('data-claim-state', 'inferred');
   await expect(page.locator('g.node[data-node-id="n13"] .icm-node-evidence-marker title')).toHaveText('推断');
+  const titles = await page.locator('g.edgeLabel[data-icm-hover-edge-id]').evaluateAll((labels) =>
+    Array.from(new Set(labels.map((label) => label.getAttribute('title')))),
+  );
+  expect(titles).toEqual(['悬停可突出显示所属关系线；点击可钉住或取消']);
   await page.locator('g.node[data-node-id="n1"]').click();
   await expect(page.locator('#detail-panel')).toContainText('创建订单');
   await expect(page.locator('#detail-panel .claim-state')).toHaveText('已验证');

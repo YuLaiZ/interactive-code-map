@@ -36,6 +36,10 @@
   const OFFSET_EPSILON_PX = 0.01;
 
   let selectedNodeId = null;
+  // 关系线钉住：任意时刻最多一条边保持“点击常亮”，视觉与悬停完全同款。
+  // 悬停态单独记录，使悬停描边重绘时能同时保留钉住描边。
+  let pinnedEdgeId = null;
+  let hoveredEdgeId = null;
   let lastFocusedNodeEl = null;
   let boundNodeElements = [];
   let reactRoot = null;
@@ -206,6 +210,8 @@
       return {
         graphControls: '图谱控制', zoomIn: '放大', zoomOut: '缩小', fit: '全图', fitAriaLabel: '缩放至完整图谱', closeDetail: '关闭详情',
         interactionHint: '点击图中卡片查看详情', controls: '操作', tabAction: '选择', enterAction: '打开', escapeAction: '关闭',
+        pinAction: '点击关系线钉住高亮',
+        edgeHoverTitle: '悬停可突出显示所属关系线；点击可钉住或取消',
         ariaLabel: '图谱阅读说明、证据状态与操作图例', reading: '阅读说明', group: '分组',
         condition: '条件', action: '动作关系', internal: '组内关系', evidence: '证据状态',
         verified: '已验证', inferred: '推断', unconfirmed: '待确认', emptyDetail: '暂无更多详情。',
@@ -214,6 +220,8 @@
     return {
       graphControls: 'Graph controls', zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit to screen', fitAriaLabel: 'Fit to screen', closeDetail: 'Close detail',
       interactionHint: 'Click a card for details', controls: 'Controls', tabAction: 'select', enterAction: 'open', escapeAction: 'close',
+      pinAction: 'Click a line to pin it',
+      edgeHoverTitle: 'Hover to highlight this relationship; click to pin or unpin',
       ariaLabel: 'Graph reading guide, evidence status, and controls', reading: 'Reading guide', group: 'Group',
       condition: 'Condition', action: 'Action relationship', internal: 'Internal relationship', evidence: 'Evidence status',
       verified: 'verified', inferred: 'inferred', unconfirmed: 'unconfirmed', emptyDetail: 'No further details.',
@@ -409,14 +417,16 @@
   // 关系线不应只靠线条颜色来区分。在复杂图里，把任意边的标签、实际路径、命中
   // 带和必要的回指元素挂到同一个稳定 ID：鼠标无论落在动作关系、条件框或组内
   // 连线上，都能突出同一条业务关系。条件只是在此通用规则上保留专属的文字语义。
-  function bindEdgeHover(svgEl) {
+  function bindEdgeHover(svgEl, spec) {
+    // 关系线 tooltip 属于固定交互 UI：与图例一致按 uiLocale 本地化，而非硬编码中文。
+    const edgeTitleCopy = uiCopyForLocale(uiLocaleForSpec(spec)).edgeHoverTitle;
     const conditionLabels = Array.from(svgEl.querySelectorAll('g.edgeLabel[data-icm-label-kind="condition"]'));
     const conditionIds = new Set();
     for (const label of svgEl.querySelectorAll('g.edgeLabel[data-icm-edge-id]')) {
       const edgeId = label.getAttribute('data-icm-edge-id');
       if (!edgeId) continue;
       label.setAttribute('data-icm-hover-edge-id', edgeId);
-      label.setAttribute('title', '悬停可突出显示所属关系线');
+      label.setAttribute('title', edgeTitleCopy);
       if (conditionLabels.includes(label)) {
         conditionIds.add(edgeId);
         label.setAttribute('data-icm-condition-edge-id', edgeId);
@@ -457,11 +467,8 @@
 
     if (svgEl.getAttribute('data-icm-edge-hover-bound') === 'true') return;
     svgEl.setAttribute('data-icm-edge-hover-bound', 'true');
-    const edgeIdFor = function edgeIdFor(target) {
-      if (!target || typeof target.closest !== 'function') return null;
-      return target.closest('[data-icm-hover-edge-id]')?.getAttribute('data-icm-hover-edge-id') || null;
-    };
     const setHovered = function setHovered(edgeId, hovered) {
+      hoveredEdgeId = hovered ? edgeId : null;
       for (const element of svgEl.querySelectorAll('[data-icm-hover-edge-id]')) {
         const belongsToHoveredEdge = hovered && element.getAttribute('data-icm-hover-edge-id') === edgeId;
         element.classList.toggle('icm-edge-hovered', belongsToHoveredEdge);
@@ -469,7 +476,7 @@
           element.classList.toggle('icm-condition-edge-hovered', belongsToHoveredEdge);
         }
       }
-      renderEdgeHoverOutline(svgEl, hovered ? edgeId : null);
+      renderEdgeHoverOutline(svgEl, hoveredEdgeId);
     };
     svgEl.addEventListener('pointerover', function highlightEdge(event) {
       const edgeId = edgeIdFor(event.target);
@@ -481,6 +488,58 @@
       if (!edgeId || edgeIdFor(event.relatedTarget) === edgeId) return;
       setHovered(edgeId, false);
     });
+  }
+
+  function edgeIdFor(target) {
+    if (!target || typeof target.closest !== 'function') return null;
+    return target.closest('[data-icm-hover-edge-id]')?.getAttribute('data-icm-hover-edge-id') || null;
+  }
+
+  // 点击钉住关系线：钉住态与悬停共用同一套视觉与动画（CSS 中 .icm-edge-hovered
+  // 与 .icm-edge-pinned 始终成对出现在同一条规则里），但由点击驱动、任意时刻仅
+  // 一条。悬停机制完全不受影响：悬停类仍由 pointerover/pointerout 独立切换。
+  function syncPinnedAttributes(svgEl) {
+    for (const element of svgEl.querySelectorAll('[data-icm-hover-edge-id]')) {
+      const pinned = pinnedEdgeId !== null
+        && element.getAttribute('data-icm-hover-edge-id') === pinnedEdgeId;
+      element.classList.toggle('icm-edge-pinned', pinned);
+      if (element.hasAttribute('data-icm-condition-edge-id')) {
+        element.classList.toggle('icm-condition-edge-pinned', pinned);
+      }
+      if (element.matches('g.edgeLabel')) {
+        element.setAttribute('aria-pressed', String(pinned));
+      }
+    }
+  }
+
+  function setPinned(svgEl, edgeId) {
+    pinnedEdgeId = edgeId;
+    syncPinnedAttributes(svgEl);
+    renderEdgeHoverOutline(svgEl, hoveredEdgeId);
+  }
+
+  function bindEdgePinning(svgEl) {
+    // 关系胶囊与节点卡片同为可聚焦按钮：Tab 可达、Enter/Space 触发钉住或取消。
+    for (const label of svgEl.querySelectorAll('g.edgeLabel[data-icm-hover-edge-id]')) {
+      label.setAttribute('tabindex', '0');
+      label.setAttribute('role', 'button');
+      label.setAttribute('aria-pressed', 'false');
+      label.addEventListener('keydown', function pinOnKeydown(event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        const edgeId = edgeIdFor(event.currentTarget);
+        if (edgeId) setPinned(svgEl, pinnedEdgeId === edgeId ? null : edgeId);
+      });
+    }
+    svgEl.addEventListener('click', function pinOnEdgeClick(event) {
+      if (event.target.closest && event.target.closest('g.node[data-node-id]')) return;
+      const edgeId = edgeIdFor(event.target);
+      if (!edgeId) return;
+      setPinned(svgEl, pinnedEdgeId === edgeId ? null : edgeId);
+    });
+    document.addEventListener('keydown', function clearPinOnEscape(event) {
+      if (event.key === 'Escape' && pinnedEdgeId !== null) setPinned(svgEl, null);
+    }, true);
   }
 
   // Mermaid 的 edgeLabel 同时包含 HTML foreignObject 和一个矩形 labelBkg。仅靠
@@ -521,12 +580,16 @@
     }
   }
 
-  function renderEdgeHoverOutline(svgEl, edgeId) {
+  function renderEdgeHoverOutline(svgEl, hoverEdgeId) {
     const layer = ensureEdgeHoverOutlineLayer(svgEl);
     layer.replaceChildren();
-    if (!edgeId) return;
-    for (const edgeLabel of svgEl.querySelectorAll('g.edgeLabel[data-icm-hover-edge-id="' + edgeId + '"]')) {
-      appendEdgeHoverOutline(svgEl, layer, edgeLabel);
+    // 悬停是瞬态定位，钉住是点击后的常驻标记；两者同层、同款描边。悬停切换会
+    // 整层重绘，因此每次都以“当前悬停 + 当前钉住”两个来源重建，钉住框不丢失。
+    for (const edgeId of new Set([hoverEdgeId, pinnedEdgeId])) {
+      if (!edgeId) continue;
+      for (const edgeLabel of svgEl.querySelectorAll('g.edgeLabel[data-icm-hover-edge-id="' + edgeId + '"]')) {
+        appendEdgeHoverOutline(svgEl, layer, edgeLabel);
+      }
     }
   }
 
@@ -1260,13 +1323,20 @@
       }
     }
 
+    // 单击空白取消钉住的位移阈值：按下到松开的屏幕移动小于该值视为单击，
+    // 超过则一定是拖动画布，钉住保持不变。
+    const blankClickDragThresholdPx = 6;
+    let blankPointerDown = null;
+
     viewportEl.addEventListener('pointerdown', function onPointerDown(event) {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
-      // 让 SVG 节点保留原生 click 序列。若先在 viewport 捕获指针，
-      // 浏览器会把 pointerup/click 重定向到 viewport，导致节点首击失效。
-      if (event.target && typeof event.target.closest === 'function' && event.target.closest('g.node[data-node-id]')) {
+      // 让 SVG 节点与关系线元素保留原生 click 序列。若先在 viewport 捕获指针，
+      // 浏览器会把 pointerup/click 重定向到 viewport，导致节点首击和关系线钉住失效。
+      if (event.target && typeof event.target.closest === 'function'
+        && (event.target.closest('g.node[data-node-id]') || event.target.closest('[data-icm-hover-edge-id]'))) {
         return;
       }
+      blankPointerDown = { x: event.clientX, y: event.clientY };
       try {
         viewportEl.setPointerCapture(event.pointerId);
       } catch {
@@ -1305,6 +1375,20 @@
 
     viewportEl.addEventListener('pointerup', finishPointer);
     viewportEl.addEventListener('pointercancel', finishPointer);
+    // 空白处的按下会被上面的 pan 逻辑捕获，click 也被重定向到 viewport 本身。
+    // 只有“原地单击”（位移小于阈值）才取消钉住；拖动画布后松手必然超阈值。
+    // 节点与关系线上的 click 已被排除，不会误清钉住。
+    viewportEl.addEventListener('click', function clearPinOnBlankClick(event) {
+      const down = blankPointerDown;
+      blankPointerDown = null;
+      if (!down || pinnedEdgeId === null) return;
+      if (event.target && typeof event.target.closest === 'function'
+        && (event.target.closest('g.node[data-node-id]') || event.target.closest('[data-icm-hover-edge-id]'))) {
+        return;
+      }
+      if (Math.hypot(event.clientX - down.x, event.clientY - down.y) > blankClickDragThresholdPx) return;
+      setPinned(svgEl, null);
+    });
     // 浏览器会把在 SVG 文本上的拖动理解成框选文字。画布的唯一拖动语义是平移，
     // 因此在图谱视口内统一取消选择；右侧详情窗不在该视口内，仍可复制内容。
     viewportEl.addEventListener('selectstart', function preventGraphTextSelection(event) {
@@ -2643,6 +2727,8 @@
           h('span', { className: 'icm-legend-caption' }, copy.controls),
           h('span', { className: 'icm-operation-pointer' }, copy.interactionHint),
           h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
+          h('span', { className: 'icm-operation-pointer' }, copy.pinAction),
+          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
           h('kbd', null, 'Tab'), h('span', { className: 'icm-operation-label' }, copy.tabAction),
           h('kbd', null, 'Enter'), h('span', { className: 'icm-operation-label' }, copy.enterAction),
           h('kbd', null, 'Esc'), h('span', { className: 'icm-operation-label' }, copy.escapeAction),
@@ -2807,7 +2893,8 @@
       };
       reconnectHandoffPathsToNodes(svgEl, spec);
       detectAndRepairSubgraphTitles(svgEl);
-      bindEdgeHover(svgEl);
+      bindEdgeHover(svgEl, spec);
+      bindEdgePinning(svgEl);
       // Mermaid 的 htmlLabel 在首次改宽后会延迟到下一帧才完成换行高度计算。
       // 再做一次同一套幂等修复，让长分组页签按最终可见高度获得顶部净空。
       window.requestAnimationFrame(function settleWrappedGroupTitles() {
