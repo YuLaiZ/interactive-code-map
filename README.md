@@ -21,7 +21,7 @@ A complete [Chinese reading translation of the skill](skill/SKILL.zh-CN.md) is i
 
 ### All supported agent clients
 
-Paste this into Codex, ZCode, Claude Code, Claude Desktop Code, or WorkBuddy:
+Paste this into Codex, ZCode, Claude Code, Claude Desktop Code, WorkBuddy, or DeepSeek Harness:
 
 > Fetch `https://github.com/YuLaiZ/interactive-code-map`. Install its `skill/` directory as the `interactive-code-map` skill using this client's supported skill-install mechanism. Keep the directory intact, including `SKILL.md`, `SKILL.zh-CN.md`, `renderer/`, and `references/`. Confirm the skill is discoverable and can generate a relative HTML map. If this client cannot install skills itself, report the exact manual import step; do not guess an internal path or create a symlink.
 

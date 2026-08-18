@@ -21,7 +21,7 @@
 
 ### 全部目标 Agent 客户端
 
-可把下面这段话直接发送给 Codex、ZCode、Claude Code、Claude Desktop Code 或 WorkBuddy：
+可把下面这段话直接发送给 Codex、ZCode、Claude Code、Claude Desktop Code、WorkBuddy 或 DeepSeek Harness：
 
 > 请获取 `https://github.com/YuLaiZ/interactive-code-map`。使用当前客户端支持的 skill 安装机制，将其中的 `skill/` 目录安装为 `interactive-code-map` skill；保持该目录完整，包含 `SKILL.md`、`SKILL.zh-CN.md`、`renderer/` 与 `references/`。确认该 skill 可被发现，且能生成相对路径的 HTML 图谱。若当前客户端不能自行安装 skill，请报告准确的手工导入步骤；不要猜测内部目录，也不要创建软链接。
 
