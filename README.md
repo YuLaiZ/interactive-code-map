@@ -4,6 +4,10 @@
 
 A cross-client skill that turns codebase evidence into a single interactive HTML code map, with explicit evidence states and a structured MapSpec that separates research from presentation.
 
+## See it in action
+
+![Interactive code map demo showing zoom, pan, relationship highlighting, click-to-pin, and line-level evidence](docs/assets/interactive-code-map-demo.gif)
+
 ## Online demos
 
 - [English demo](https://yulaiz.github.io/interactive-code-map/en/)

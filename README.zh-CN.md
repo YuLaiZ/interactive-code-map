@@ -4,6 +4,10 @@
 
 一个跨客户端 skill，将代码库证据转换为单个可交互的 HTML 代码图谱；它用结构化 MapSpec 分离调研与展示，并显式呈现证据状态。
 
+## 效果演示
+
+![交互式代码图谱演示：缩放、拖动、关系高亮、点击钉住与行号证据](docs/assets/interactive-code-map-demo.zh-CN.gif)
+
 ## 在线 Demo
 
 - [中文 Demo](https://yulaiz.github.io/interactive-code-map/zh-CN/)
