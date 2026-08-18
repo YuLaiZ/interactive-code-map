@@ -11,7 +11,7 @@
  *   --allow-test-fixture: 允许 languageProfile === 'fixture' 的测试专用 MapSpec,
  *     且仅对 tests/<任意子目录>/fixtures/ 下的文件生效(v3.2.13 P1-3);
  *     生产 build-html 不带此 flag,必须拒绝测试标记。
- *   --repo-root <dir>: 可选。校验 evidence.path 解析后不越出该仓库根
+ *   --repo-root <dir>: 可选。校验 evidence.path 解析后不越出该证据根目录
  *     (realpath 判定,防 symlink 逃逸,v3.2.13 P1-2)。
  *   无参数运行: 打印用法并以退出码 1 结束(不静默通过)。
  * 退出码: 0 = 全部通过; 1 = 任一失败(打印每处错误)。

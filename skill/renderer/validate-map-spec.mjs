@@ -15,7 +15,7 @@
  *    (启发式防线;最终 HTML 二次扫描由 build-html 复用本模块导出的同一规则集)。
  *
  * --repo-root 的 verified 证据真实性(v3.2.14 P0):
- *   state=verified 的证据必须能回溯到已检查的代码——提供 repoRoot 时:
+ *   state=verified 的证据必须能回溯到已检查的代码或资料文档——提供 repoRoot 时:
  *   - 根必须真实存在且是目录;
  *   - evidence.path 必须解析到真实、位于根内的**普通文件**(目录/其他类型拒绝);
  *   - lineStart/lineEnd 必须落在该文件实际行数内(按 \n 计数,兼容 CRLF);
@@ -327,9 +327,9 @@ function checkEvidence(ev, et, errors, rootReal) {
 }
 
 /**
- * --repo-root 越界判定:把相对路径按仓库根解析后做 realpath,
+ * --repo-root 越界判定:把相对路径按证据根目录解析后做 realpath,
  * 防 symlink 逃逸——对"最深存在的祖先"realpath,剩余不存在的段拼回。
- * 仓库内 symlink 指向仓库外即解析出仓库外真实路径,拒绝。
+ * 根内 symlink 指向根外即解析出根外真实路径,拒绝。
  */
 function isWithinRoot(rootReal, relPath) {
   const abs = path.resolve(rootReal, relPath);
@@ -358,7 +358,7 @@ function isWithinRoot(rootReal, relPath) {
  *   allowTestFixture: 是否放行测试专用标记(languageProfile==='fixture');
  *   fixtureFilePath:  被校验文件路径,allowTestFixture 时须落在 fixtureRoots 内;
  *   fixtureRoots:     真实 fixture 根目录列表(如 <仓库根>/tests),realpath containment 判定;
- *   repoRoot:         --repo-root 仓库根(可选),校验 evidence.path 越界 + verified 真实性。
+ *   repoRoot:         --repo-root 证据根目录(可选,代码仓库或业务资料目录),校验 evidence.path 越界 + verified 真实性。
  */
 export function validateMapSpec(spec, { allowTestFixture = false, fixtureFilePath = null, fixtureRoots = null, repoRoot = null } = {}) {
   const errors = [];

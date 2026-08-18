@@ -4,11 +4,11 @@
   "title": "MapSpec v1 build-time rules and acceptance test vectors",
   "description": "Plain rules data file (NOT a JSON Schema). Non-schema enforcement rules for build-html.mjs, separated from mapspec-v1.schema.json so that schema stays clean for strict validators (ajv strict mode rejects unknown keywords). These are runtime/build-time checks, consumed by build-html.mjs unit tests; not validated by ajv.",
   "pathValidation": {
-    "description": "evidence.path must be relative to the user-confirmed repository root. Regex in schema rejects empty/absolute/drive/UNC; segment-level rules below are enforced in build-html.mjs since regex cannot express them.",
+    "description": "evidence.path must be relative to the user-confirmed evidence root (--repo-root): the repository root for code maps, or the documents directory for non-code business-process maps. Regex in schema rejects empty/absolute/drive/UNC; segment-level rules below are enforced in build-html.mjs since regex cannot express them.",
     "rules": [
       "Reject if path contains backslash '\\'",
       "After splitting on '/', reject if any segment is '..' or '.'",
-      "Reject if path resolves outside the user-confirmed repository root"
+      "Reject if path resolves outside the user-confirmed evidence root"
     ],
     "acceptanceTestVectors": [
       ["src/main/Main.java", true],
@@ -115,7 +115,7 @@
     "htmlPostScan": "build-html.mjs MUST re-scan the final HTML with the SAME rule set exported by validate-map-spec.mjs (import isSensitivePath/isSensitiveContent/containsAbsoluteFilesystemPath); reject on match."
   },
   "verifiedEvidenceFileValidation": {
-    "description": "P0 (v3.2.14): state=verified evidence must trace back to code that was actually inspected. When --repo-root is provided, build-html.mjs MUST enforce: repo root exists and is a directory; each verified evidence.path resolves (realpath) to a real regular file inside the root; lineStart/lineEnd are within the file's actual line count (counted by '\\n', CRLF-safe). Missing files, directories, out-of-range lines, symlink escapes and root-is-a-file are rejected. inferred/unconfirmed evidence does NOT require the file to exist (they are not 'verified'), but still must pass relative-path and sensitive rules.",
+    "description": "P0 (v3.2.14): state=verified evidence must trace back to code or documents that were actually inspected. When --repo-root is provided, build-html.mjs MUST enforce: repo root exists and is a directory; each verified evidence.path resolves (realpath) to a real regular file inside the root; lineStart/lineEnd are within the file's actual line count (counted by '\\n', CRLF-safe). Missing files, directories, out-of-range lines, symlink escapes and root-is-a-file are rejected. inferred/unconfirmed evidence does NOT require the file to exist (they are not 'verified'), but still must pass relative-path and sensitive rules.",
     "rules": [
       "repo root must exist and be a directory",
       "verified evidence.path must realpath to a real regular file inside the root (symlink escape rejected)",

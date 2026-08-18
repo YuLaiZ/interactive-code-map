@@ -2,11 +2,11 @@
 
 > **简体中文** | [English](README.md)
 
-一个跨客户端 skill，将代码库证据转换为单个可交互的 HTML 代码图谱；它用结构化 MapSpec 分离调研与展示，并显式呈现证据状态。
+一个跨客户端 skill，将代码库证据或非代码业务流程描述转换为单个可交互的 HTML 证据图谱；它用结构化 MapSpec 分离调研与展示，并显式呈现证据状态。
 
 ## 效果演示
 
-![交互式代码图谱演示：缩放、拖动、关系高亮、点击钉住与行号证据](docs/assets/interactive-code-map-demo.zh-CN.gif)
+![交互式证据图谱演示：缩放、拖动、关系高亮、点击钉住与行号证据](docs/assets/interactive-code-map-demo.zh-CN.gif)
 
 ## 在线 Demo
 
@@ -35,15 +35,17 @@
 
 ## 手动生成 HTML 图谱
 
-根据已检查的代码创建 MapSpec 后，用选定仓库根校验 verified 证据，并生成相对输出路径：
+根据已检查的代码或资料创建 MapSpec 后，用选定证据根校验 verified 证据，并生成相对输出路径：
 
 ~~~bash
 node skill/renderer/build-html.mjs \
   --in path/to/mapspec.json \
   --out docs/code-map.html \
-  --repo-root path/to/repository \
+  --repo-root path/to/evidence-root \
   --cdn-profile global
 ~~~
+
+`--repo-root` 是证据根目录：代码图谱时为仓库根，非代码业务流程图谱时为用户资料所在目录。两种情况下 verified 证据都指向实际检查过的行；仅来自口述描述的断言保持 `inferred` 或 `unconfirmed`。
 
 构建器会校验 MapSpec、内联应用代码和 CSS，并原子写入输出；它绝不会删除输入的 MapSpec。生成的 HTML 打开时需要联网加载固定版本的 React、ReactDOM 与 Mermaid 运行时依赖。
 

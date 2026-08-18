@@ -31,7 +31,7 @@
     "claimState": {
       "type": "string",
       "enum": ["verified", "inferred", "unconfirmed"],
-      "description": "Assertion-level state for a node/edge. verified requires ALL evidence.state=verified and >=1 code location; inferred has mixed evidence or strong-but-unproven; unconfirmed has no verified evidence."
+      "description": "Assertion-level state for a node/edge. verified requires ALL evidence.state=verified and >=1 inspected code or document location; inferred has mixed evidence or strong-but-unproven; unconfirmed has no verified evidence."
     },
     "evidenceState": {
       "type": "string",
@@ -142,7 +142,7 @@
               "note": { "type": "string" },
               "state": { "$ref": "#/$defs/evidenceState" }
             },
-            "description": "verified evidence must carry a concrete code location with line range."
+            "description": "verified evidence must carry a concrete code or document location with an inspected line range."
           }
         }
       ],

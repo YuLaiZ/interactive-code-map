@@ -2,15 +2,15 @@
 
 > 本文件是 [`SKILL.md`](SKILL.md) 的中文阅读译本，不是客户端发现或执行入口。客户端应只加载 `SKILL.md`；若内容不一致，以 `SKILL.md` 为准。
 
-使用此 skill 创建简洁、以证据为依据的交互式代码图谱。它生成一个 HTML 文件，且绝不自动打开浏览器。
+使用此 skill 创建简洁、证据可追溯的交互式证据图谱。它生成一个 HTML 文件，且绝不自动打开浏览器。除了代码库，也可将用户描述的非代码业务流程生成为同样的证据图谱。
 
 ## 工作流
 
-1. 明确输入边界：获取仓库目录与需要回答的问题。缺少范围时询问；不得根据提供目录之外的内容推断代码事实。
+1. 明确输入边界。获取“仓库目录 + 需要回答的问题”，或“用户描述的非代码业务流程 + 可选的资料目录”。缺少范围时询问；不得根据提供目录或用户描述之外的内容推断事实。
 2. 生成前确认可选交互配置。询问：“是否将键盘操作与小视口可用性纳入本次 HTML 图谱的验收范围？（推荐）”用户已经明确表达的偏好也视为确认。如果用户未确认，仍继续生成图谱，但把这些能力视为本次交付范围外；不得将其报告或测试为已验收行为。不得仅因未选择而移除渲染器能力。生成产物的操作说明会显示主要命令：点击卡片查看详情、点击关系线钉住或取消与悬停同款的高亮、`Tab` 选择、`Enter` 打开或钉住、`Esc` 关闭并清除钉住；节点也支持空格打开。
 3. 选择 CDN 交付 profile。默认使用 `global`；只有用户明确偏好中国大陆访问，或明确目标受众位于中国大陆时，才使用 `china-friendly`。对话语言只是弱信号，不是位置事实。只有当前环境能代表目标用户、且用户同意联网探测时，才可采用实际测速。只能选择随包提供的 profile；不得自行添加 CDN URL 或绕过 SRI。报告所选 profile 及理由。
-4. 仅在该边界内检查代码。将每项 MapSpec 断言标记为 verified、inferred 或 unconfirmed。
-5. 形成 MapSpec。以 [`mapspec-v1.schema.json`](references/mapspec-v1.schema.json) 为权威结构。每条 verified 证据都必须具有真实的相对路径和已检查的行范围。
+4. 仅在该边界内检查：代码仓库输入检查代码，业务流程输入检查用户提供的资料与陈述。将每项 MapSpec 断言标记为 verified、inferred 或 unconfirmed。
+5. 形成 MapSpec。以 [`mapspec-v1.schema.json`](references/mapspec-v1.schema.json) 为权威结构。每条 verified 证据都必须具有真实的相对路径和已按 `--repo-root` 检查过的行范围：代码仓库输入指向代码行，业务流程输入指向资料文件（如需求或流程 Markdown 文档）的行。仅来自用户口述、没有可检查文件的断言必须标记为 inferred 或 unconfirmed，绝不标为 verified。
    对每个交付图谱明确设置可选字段 `meta.uiLocale`：英文 Demo 使用 `en`；用户以中文沟通且未要求英文产物时默认使用 `zh-CN`。文档语言、图谱区域名称、依赖加载失败页、阅读说明、关系图例、条件标记、证据状态与操作说明等 renderer 固定 UI 文案必须全部随此字段一致切换，禁止出现中英混杂。每个节点还必须通过 renderer 左上角、与图例一致的小状态点和边框样式直接呈现本地化断言状态。`languageProfile` 只描述代码或业务来源，不决定 UI 语言。节点、分组与边的业务原文保持输入语言，除非用户明确要求翻译业务内容。
 6. 生成或修改多分组图谱前，阅读 [`visual-quality-contract.zh-CN.md`](references/visual-quality-contract.zh-CN.md)。按其中的关系语义、路由边界、标签放置、语言和视觉验收规则执行。不得通过不断叠加临时路由改动修补复杂图；保留 Mermaid 的节点到节点走廊，只做文档规定的局部处理。
 7. 校验并生成产物。先检查 `node --version` 是否至少为 20；若不是，报告需要 Node.js 20 或更高版本，并为用户保留 MapSpec，不要尝试生成。
@@ -24,11 +24,13 @@
 node "<skill-root>/renderer/build-html.mjs" \
   --in <mapspec.json> \
   --out <relative-output.html> \
-  --repo-root <repository-root> \
+  --repo-root <evidence-root> \
   --cdn-profile <global|china-friendly>
 ~~~
 
 `build-html.mjs` 使用 `import.meta.url` 解析自身渲染器资源，因此命令可从任意当前工作目录运行。
+
+`--repo-root` 是证据根目录：代码输入时为仓库根，业务流程输入时为用户资料所在目录。两种情况下 verified 证据的路径与行范围都会按该根校验；inferred 与 unconfirmed 证据只要求根内合法的相对路径，不要求文件实际存在。
 
 `global` 对所有依赖使用 jsDelivr → unpkg。`china-friendly` 的 React / ReactDOM 按 npmmirror → staticfile → jsDelivr → unpkg → bootcdn 回退，Mermaid 按 npmmirror → jsDelivr → unpkg 回退。所有来源均固定版本、受 SRI 保护、单源超时为 8 秒，并在按序回退失败后安全失败。
 
@@ -59,7 +61,7 @@ window.interactiveCodeMap.repairSubgraphTitles()
 
 ## 安全与证据规则
 
-- 只输出相对的仓库路径。不得在 MapSpec 或 HTML 中放入绝对本机路径、凭据、`.env` 文件、私钥或其他敏感值。
+- 只输出证据根目录内的相对路径。不得在 MapSpec 或 HTML 中放入绝对本机路径、凭据、`.env` 文件、私钥或其他敏感值。
 - 不得将 inferred 或 unconfirmed 断言表述为事实。
 - 保持图谱聚焦。如果请求需要约 60 个以上节点，先请用户缩小问题范围，避免生成嘈杂图谱。
 - MapSpec 字符串会被当作文本渲染，但所有输入仍不可信：绝不绕过校验，也不得手工拼接未转义的 Mermaid DSL。

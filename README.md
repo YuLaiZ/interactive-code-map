@@ -2,7 +2,7 @@
 
 > **English** | [简体中文](README.zh-CN.md)
 
-A cross-client skill that turns codebase evidence into a single interactive HTML code map, with explicit evidence states and a structured MapSpec that separates research from presentation.
+A cross-client skill that turns codebase evidence into a single interactive HTML code map — or a described non-code business process into the same evidence-backed map — with explicit evidence states and a structured MapSpec that separates research from presentation.
 
 ## See it in action
 
@@ -35,15 +35,17 @@ Use a development symlink only when a client explicitly supports it and you want
 
 ## Manual HTML generation
 
-Create a MapSpec from inspected code, then validate its verified evidence against the selected repository root and build a relative output path:
+Create a MapSpec from inspected code or supporting documents, then validate its verified evidence against the selected evidence root and build a relative output path:
 
 ~~~bash
 node skill/renderer/build-html.mjs \
   --in path/to/mapspec.json \
   --out docs/code-map.html \
-  --repo-root path/to/repository \
+  --repo-root path/to/evidence-root \
   --cdn-profile global
 ~~~
+
+`--repo-root` is the evidence root: the repository root for code maps, or the directory holding the user's supporting documents for a non-code business-process map. Verified evidence cites inspected lines in either case; statements that come only from a verbal description stay `inferred` or `unconfirmed`.
 
 The builder validates the MapSpec, embeds the application code and CSS, and writes the output atomically. It never deletes the input MapSpec. The resulting HTML needs network access to load its pinned React, ReactDOM, and Mermaid runtime dependencies.
 

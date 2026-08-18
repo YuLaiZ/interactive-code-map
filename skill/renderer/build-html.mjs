@@ -2,7 +2,7 @@
 /**
  * MapSpec → 单文件 HTML 的零依赖构建入口。
  *
- * 用法：node build-html.mjs --in <mapspec> --out <relative-html> --repo-root <root>
+ * 用法：node build-html.mjs --in <mapspec> --out <relative-html> --repo-root <evidence-root>
  *        [--allow-test-fixture]
  */
 import {
@@ -100,9 +100,9 @@ function staticCopyForLocale(locale) {
   if (locale === 'zh-CN') {
     return {
       documentLang: 'zh-CN',
-      graphViewportLabel: '交互式代码图谱',
+      graphViewportLabel: '交互式证据图谱',
       failureHeading: '依赖加载失败',
-      failureSummary: '此代码图谱需要从 CDN 加载 React 和 Mermaid。所有已配置来源均因网络、超时或完整性错误而未能加载。',
+      failureSummary: '此证据图谱需要从 CDN 加载 React 和 Mermaid。所有已配置来源均因网络、超时或完整性错误而未能加载。',
       failureRetry: '请检查网络连接后稍后重试。',
     };
   }
@@ -203,7 +203,7 @@ function parseArgs(argv) {
     }
   }
   if (!args.input || !args.output || !args.repoRoot) {
-    throw new Error('用法: node build-html.mjs --in <mapspec> --out <relative-html> --repo-root <root> [--cdn-profile global|china-friendly] [--allow-test-fixture]');
+    throw new Error('用法: node build-html.mjs --in <mapspec> --out <relative-html> --repo-root <evidence-root> [--cdn-profile global|china-friendly] [--allow-test-fixture]');
   }
   return args;
 }

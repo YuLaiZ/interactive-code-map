@@ -78,7 +78,7 @@ console.log('== renderHtml 基本生成 ==');
   const chineseSpec = baseSpec();
   chineseSpec.meta.uiLocale = 'zh-CN';
   const chineseHtml = renderHtml(chineseSpec, { repoRoot: tmp });
-  assert(chineseHtml.includes('<html lang="zh-CN">') && chineseHtml.includes('aria-label="交互式代码图谱"'), '中文产物使用中文文档语言与图谱区域名称');
+  assert(chineseHtml.includes('<html lang="zh-CN">') && chineseHtml.includes('aria-label="交互式证据图谱"'), '中文产物使用中文文档语言与图谱区域名称');
   assert(chineseHtml.includes('<h1>依赖加载失败</h1>') && chineseHtml.includes('请检查网络连接后稍后重试。'), '中文产物使用中文依赖失败页');
   assert(chineseHtml.includes('点击图中卡片查看详情'), '中文产物本地化卡片详情提示');
   assert(chineseHtml.includes('悬停可突出显示所属关系线；点击可钉住或取消'), '中文产物携带中文关系线 tooltip 文案');
@@ -97,6 +97,59 @@ console.log('== renderHtml 基本生成 ==');
       parseError = error;
     }
     assert(typeof rendererScript === 'string' && !parseError, `最终内联 renderer 脚本可由 Function 解析${parseError ? `: ${parseError.message}` : ''}`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n== 非代码业务流程（文档行号证据）==');
+{
+  const tmp = mkdtempSync(path.join(tmpdir(), 'icm-docs-'));
+  try {
+    writeFileSync(path.join(tmp, 'process.md'), '# 报销流程\n1. 提交申请\n2. 主管审批\n3. 财务打款\n');
+    const docSpec = {
+      schemaVersion: 1,
+      meta: {
+        title: '报销流程',
+        question: '一笔报销如何从提交到打款？',
+        scope: '用户提供的 process.md 与口述补充。',
+        languageProfile: 'zh-CN',
+        uiLocale: 'zh-CN',
+        summary: '非代码业务流程示例。',
+      },
+      nodes: [
+        {
+          id: 'n1',
+          title: '主管审批',
+          claimState: 'verified',
+          evidence: [{ path: 'process.md', lineStart: 3, lineEnd: 3, state: 'verified' }],
+          detail: { summary: '文档第 3 行写明主管审批环节。', segments: [] },
+        },
+        {
+          id: 'n2',
+          title: '月末归档',
+          claimState: 'unconfirmed',
+          evidence: [{ path: 'meeting-notes/2026-08.md', state: 'unconfirmed' }],
+          detail: { summary: '仅口述，无资料文件。', segments: [] },
+        },
+      ],
+      edges: [
+        { from: 'n1', to: 'n2', label: '审批通过', claimState: 'verified', evidence: [{ path: 'process.md', lineStart: 3, lineEnd: 3, state: 'verified' }] },
+      ],
+    };
+    const html = renderHtml(docSpec, { repoRoot: tmp });
+    assert(html.includes('aria-label="交互式证据图谱"'), '文档行号 verified 证据通过校验并使用中文区域名称');
+    assert(html.includes('主管审批') && html.includes('月末归档'), '非代码节点标题写入 HTML');
+    assert(html.includes('meeting-notes/2026-08.md'), 'unconfirmed 证据允许指向尚不存在的资料路径');
+    const badDocSpec = JSON.parse(JSON.stringify(docSpec));
+    badDocSpec.nodes[0].evidence[0].lineEnd = 99;
+    let docThrew = false;
+    try {
+      renderHtml(badDocSpec, { repoRoot: tmp });
+    } catch (error) {
+      docThrew = error.message.includes('超出文件实际行数');
+    }
+    assert(docThrew, '文档证据行号越界 → 校验拒绝');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
