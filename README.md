@@ -19,9 +19,9 @@ The installable package is the repository's `skill/` directory. Keep it intact, 
 
 A complete [Chinese reading translation of the skill](skill/SKILL.zh-CN.md) is included for people who install the package. `skill/SKILL.md` remains the only executable entry.
 
-### All supported agent clients
+### Any skill-capable agent client
 
-Paste this into Codex, ZCode, Claude Code, Claude Desktop Code, WorkBuddy, or DeepSeek Harness:
+Any agent client that can install skills can run it — including Codex, ZCode, Claude Code, Claude Desktop Code, WorkBuddy, and DeepSeek Harness. Paste this into your client:
 
 > Fetch `https://github.com/YuLaiZ/interactive-code-map`. Install its `skill/` directory as the `interactive-code-map` skill using this client's supported skill-install mechanism. Keep the directory intact, including `SKILL.md`, `SKILL.zh-CN.md`, `renderer/`, and `references/`. Confirm the skill is discoverable and can generate a relative HTML map. If this client cannot install skills itself, report the exact manual import step; do not guess an internal path or create a symlink.
 
