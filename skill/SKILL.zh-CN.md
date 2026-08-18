@@ -32,6 +32,8 @@ node "<skill-root>/renderer/build-html.mjs" \
 
 `--repo-root` 是证据根目录：代码输入时为仓库根，业务流程输入时为用户资料所在目录。两种情况下 verified 证据的路径与行范围都会按该根校验；inferred 与 unconfirmed 证据只要求根内合法的相对路径，不要求文件实际存在。
 
+`--canonical-url <https-url>` 为可选参数：当图谱会发布到已知地址时传入，生成的 HTML 会带上指向该地址的 `<link rel="canonical">` 与 `og:url`。每份生成图谱还会以 `meta.summary` 生成 `meta description`，并附带 `og:` 与 Twitter summary card 标签。
+
 `global` 对所有依赖使用 jsDelivr → unpkg。`china-friendly` 的 React / ReactDOM 按 npmmirror → staticfile → jsDelivr → unpkg → bootcdn 回退，Mermaid 按 npmmirror → jsDelivr → unpkg 回退。所有来源均固定版本、受 SRI 保护、单源超时为 8 秒，并在按序回退失败后安全失败。
 
 当环境支持时，以独占创建语义创建临时 MapSpec。构建命令绝不删除 `--in`；成功构建后，只删除本次调用创建的确切临时 MapSpec。绝不删除用户提供的 MapSpec。

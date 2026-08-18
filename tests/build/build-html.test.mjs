@@ -66,8 +66,11 @@ console.log('== renderHtml 基本生成 ==');
     assert(typeof html === 'string' && html.length > 0, 'renderHtml 返回非空 HTML');
     assert(html.includes('<html'), 'HTML 含 <html> 根');
     assert(html.includes('<title>t</title>'), 'MapSpec 标题写入 HTML title');
+    assert(html.includes('<meta name="description" content="a">'), 'MapSpec 全景摘要写入 meta description');
+    assert(html.includes('<meta property="og:title" content="t">'), '页面标题同步写入 og:title');
+    assert(!html.includes('<link rel="canonical"') && !html.includes('<meta property="og:url"'), '未提供 canonicalUrl 时不输出 canonical 与 og:url');
     assert(html.includes('Node1'), 'HTML 内联 MapSpec 节点标题');
-    assert(!['__ICM_DOCUMENT_LANG__', '__ICM_DOCUMENT_TITLE__', '__ICM_GRAPH_VIEWPORT_LABEL__', '__ICM_FAILURE_HEADING__', '__ICM_FAILURE_SUMMARY__', '__ICM_FAILURE_RETRY__', '__ICM_STYLES_CSS__', '__ICM_RENDER_JS__', '__ICM_MAPSPEC_JSON__', '__ICM_DEPS_CONFIG_JSON__'].some((token) => html.includes(token)), '所有模板占位符均被替换');
+    assert(!['__ICM_DOCUMENT_LANG__', '__ICM_DOCUMENT_TITLE__', '__ICM_META_DESCRIPTION__', '__ICM_CANONICAL_BLOCK__', '__ICM_GRAPH_VIEWPORT_LABEL__', '__ICM_FAILURE_HEADING__', '__ICM_FAILURE_SUMMARY__', '__ICM_FAILURE_RETRY__', '__ICM_STYLES_CSS__', '__ICM_RENDER_JS__', '__ICM_MAPSPEC_JSON__', '__ICM_DEPS_CONFIG_JSON__'].some((token) => html.includes(token)), '所有模板占位符均被替换');
   assert(html.includes('<html lang="en">') && html.includes('aria-label="Interactive code map"'), '英文产物使用英文文档语言与图谱区域名称');
   assert(html.includes('<h1>Failed to load dependencies</h1>') && html.includes('Check your network connection and try again later.'), '英文产物使用英文依赖失败页');
   assert(!html.includes(tmp) && !html.includes('/Users/'), 'HTML 不含 repoRoot 或用户绝对路径');
@@ -97,6 +100,36 @@ console.log('== renderHtml 基本生成 ==');
       parseError = error;
     }
     assert(typeof rendererScript === 'string' && !parseError, `最终内联 renderer 脚本可由 Function 解析${parseError ? `: ${parseError.message}` : ''}`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n== canonical 注入与 description 转义 ==');
+{
+  const tmp = mkdtempSync(path.join(tmpdir(), 'icm-canonical-'));
+  try {
+    writeEvidenceFile(tmp);
+    const spec = baseSpec();
+    spec.meta.summary = '含 & < > " \' 的摘要';
+    const html = renderHtml(spec, { repoRoot: tmp, canonicalUrl: 'https://example.test/map.html' });
+    assert(html.includes('<link rel="canonical" href="https://example.test/map.html">'), 'canonicalUrl 写入 link rel=canonical');
+    assert(html.includes('<meta property="og:url" content="https://example.test/map.html">'), 'canonicalUrl 同步写入 og:url');
+    assert(html.includes('<meta name="description" content="含 &amp; &lt; &gt; &quot; &#39; 的摘要">'), 'description 内容按 HTML 规则转义');
+    let rejected = false;
+    try {
+      renderHtml(baseSpec(), { repoRoot: tmp, canonicalUrl: 'example.test/map.html' });
+    } catch (error) {
+      rejected = error.message.includes('必须以 http:// 或 https:// 开头');
+    }
+    assert(rejected, '非 http(s) canonicalUrl 被拒绝');
+    let whitespaceRejected = false;
+    try {
+      renderHtml(baseSpec(), { repoRoot: tmp, canonicalUrl: 'https://exa mple.test/map.html' });
+    } catch (error) {
+      whitespaceRejected = error.message.includes('不含空白或引号');
+    }
+    assert(whitespaceRejected, '含空白的 canonicalUrl 被拒绝');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -166,7 +199,7 @@ console.log('\n== 已提交的双语 demo ==');
     path.join(repoRoot, 'examples', 'demo', 'expected-mapspec.zh-CN.json'),
     'utf8',
   ));
-  const chineseDemoHtml = renderHtml(chineseDemoSpec, { repoRoot: demoRepoRoot, cdnProfile: 'china-friendly' });
+  const chineseDemoHtml = renderHtml(chineseDemoSpec, { repoRoot: demoRepoRoot, cdnProfile: 'china-friendly', canonicalUrl: 'https://yulaiz.github.io/interactive-code-map/zh-CN/' });
   const checkedInChineseDemoHtml = readFileSync(
     path.join(repoRoot, 'examples', 'demo', 'expected-output.zh-CN.html'),
     'utf8',
@@ -175,13 +208,15 @@ console.log('\n== 已提交的双语 demo ==');
     path.join(repoRoot, 'examples', 'demo', 'expected-output.html'),
     'utf8',
   );
-  const englishDemoHtml = renderHtml(englishDemoSpec, { repoRoot: demoRepoRoot, cdnProfile: 'global' });
+  const englishDemoHtml = renderHtml(englishDemoSpec, { repoRoot: demoRepoRoot, cdnProfile: 'global', canonicalUrl: 'https://yulaiz.github.io/interactive-code-map/en/' });
   assert(chineseDemoSpec.meta.uiLocale === 'zh-CN', '中文 demo 显式指定 zh-CN 固定 UI');
   assert(chineseDemoHtml.includes('<html lang="zh-CN">') && chineseDemoHtml.includes('<h1>依赖加载失败</h1>'), '中文 demo 的文档语言与失败页均本地化');
   assert(chineseDemoHtml.includes('<title>咖啡柜台订单流程</title>'), '中文 demo 使用中文页面标题');
   assert(chineseDemoHtml.includes('点击图中卡片查看详情') && chineseDemoHtml.includes('证据状态'), '中文 demo 的固定 UI 全部本地化');
   assert(chineseDemoHtml.includes('registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js'), '中文 demo 使用 npmmirror React 首源');
   assert(checkedInChineseDemoHtml.includes('registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js'), '已提交中文 HTML 保持 npmmirror 首源');
+  assert(checkedInChineseDemoHtml.includes('<link rel="canonical" href="https://yulaiz.github.io/interactive-code-map/zh-CN/">'), '已提交中文 HTML 携带对应线上 canonical');
+  assert(checkedInEnglishDemoHtml.includes('<link rel="canonical" href="https://yulaiz.github.io/interactive-code-map/en/">'), '已提交英文 HTML 携带对应线上 canonical');
   assert(englishDemoHtml === checkedInEnglishDemoHtml, '已提交英文 HTML 可由当前 renderer 无漂移重建');
   assert(chineseDemoHtml === checkedInChineseDemoHtml, '已提交中文 HTML 可由当前 renderer 无漂移重建');
 }
@@ -398,6 +433,24 @@ console.log('\n== CLI ⑨ CDN profile ==');
     assert(selected.code === 0 && selectedHtml.includes('registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js'), '--cdn-profile china-friendly 生成 npmmirror 首源');
     assert(rejected.code !== 0 && !existsSync(path.join(tmp, 'bad.html')), '未知 --cdn-profile 拒绝且不写产物');
     assert(missingValue.code !== 0 && !existsSync(path.join(tmp, 'missing.html')) && missingValue.stderr.includes('参数 --cdn-profile 缺少值'), '--cdn-profile 缺值明确拒绝且不写产物');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n== CLI ⑩ --canonical-url ==');
+{
+  const tmp = mkdtempSync(path.join(tmpdir(), 'icm-cli-canonical-'));
+  try {
+    writeEvidenceFile(tmp);
+    writeFileSync(path.join(tmp, 'spec.json'), JSON.stringify(baseSpec()));
+    const selected = runCli(['--in', 'spec.json', '--out', 'canonical.html', '--repo-root', tmp, '--canonical-url', 'https://example.test/map.html'], tmp);
+    const selectedHtml = readFileSync(path.join(tmp, 'canonical.html'), 'utf8');
+    const missingValue = runCli(['--in', 'spec.json', '--out', 'missing.html', '--repo-root', tmp, '--canonical-url'], tmp);
+    const invalid = runCli(['--in', 'spec.json', '--out', 'invalid.html', '--repo-root', tmp, '--canonical-url', 'example.test/map'], tmp);
+    assert(selected.code === 0 && selectedHtml.includes('<link rel="canonical" href="https://example.test/map.html">'), '--canonical-url 写入产物 canonical');
+    assert(missingValue.code !== 0 && !existsSync(path.join(tmp, 'missing.html')) && missingValue.stderr.includes('参数 --canonical-url 缺少值'), '--canonical-url 缺值明确拒绝且不写产物');
+    assert(invalid.code !== 0 && !existsSync(path.join(tmp, 'invalid.html')) && invalid.stderr.includes('必须以 http:// 或 https:// 开头'), '非 http(s) --canonical-url 拒绝且不写产物');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

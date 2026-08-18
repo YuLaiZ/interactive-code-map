@@ -37,6 +37,8 @@ build-html.mjs resolves its own renderer assets using import.meta.url, so the co
 
 `--repo-root` is the evidence root: the repository root for code inputs, or the directory holding the user's supporting documents for business-process inputs. Verified evidence paths and line ranges are validated against this root in both cases; inferred and unconfirmed evidence needs only a valid relative path within the root — the file itself does not have to exist.
 
+`--canonical-url <https-url>` is optional: when the map will be published at a known address, pass it so the generated HTML carries a matching `<link rel="canonical">` and `og:url`. Every generated map also includes a `meta description` taken from `meta.summary`, plus `og:` and Twitter summary card tags.
+
 `global` uses jsDelivr → unpkg for every dependency. `china-friendly` uses npmmirror → staticfile → jsDelivr → unpkg → bootcdn for React and ReactDOM, and npmmirror → jsDelivr → unpkg for Mermaid. All sources are version-pinned, SRI-protected, limited to 8 seconds each, and fail closed after ordered fallback.
 
 Create a temporary MapSpec with exclusive creation semantics when the environment supports it. The build command never deletes --in; after a successful build, only delete the exact temporary MapSpec that this invocation created. Never delete a user-supplied MapSpec.

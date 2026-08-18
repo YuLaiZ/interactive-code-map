@@ -47,6 +47,8 @@ node skill/renderer/build-html.mjs \
 
 `--repo-root` 是证据根目录：代码图谱时为仓库根，非代码业务流程图谱时为用户资料所在目录。两种情况下 verified 证据都指向实际检查过的行；仅来自口述描述的断言保持 `inferred` 或 `unconfirmed`。
 
+`--canonical-url <https-url>` 为可选参数：图谱发布地址已知时传入，生成的 HTML 会带上对应的 `<link rel="canonical">` 与 `og:url`。每份生成图谱还会以 `meta.summary` 生成 `meta description`，并附带 `og:` 与 Twitter summary card 标签。
+
 构建器会校验 MapSpec、内联应用代码和 CSS，并原子写入输出；它绝不会删除输入的 MapSpec。生成的 HTML 打开时需要联网加载固定版本的 React、ReactDOM 与 Mermaid 运行时依赖。
 
 ### CDN 交付 profile
@@ -68,7 +70,8 @@ node skill/renderer/build-html.mjs \
 node skill/renderer/build-html.mjs \
   --in examples/demo/expected-mapspec.json \
   --out examples/demo/expected-output.html \
-  --repo-root examples/demo/sample-repo
+  --repo-root examples/demo/sample-repo \
+  --canonical-url https://yulaiz.github.io/interactive-code-map/en/
 ~~~
 
 ~~~bash
@@ -76,7 +79,8 @@ node skill/renderer/build-html.mjs \
   --in examples/demo/expected-mapspec.zh-CN.json \
   --out examples/demo/expected-output.zh-CN.html \
   --repo-root examples/demo/sample-repo \
-  --cdn-profile china-friendly
+  --cdn-profile china-friendly \
+  --canonical-url https://yulaiz.github.io/interactive-code-map/zh-CN/
 ~~~
 
 ## 原则

@@ -14,7 +14,8 @@ test('入口页项目链接具有明确的点击区域并跳转到仓库', async
   await page.goto(landingUrl);
   const projectLink = page.locator('.project-link');
   await expect(projectLink).toHaveAttribute('href', repositoryUrl);
-  await expect(projectLink).toContainText('GitHub Repository');
+  await expect(projectLink).toContainText('Install from GitHub');
+  await expect(projectLink).toContainText('从 GitHub 安装');
   await expect(projectLink).toHaveAttribute('target', '_blank');
   await expect(projectLink).toHaveAttribute('rel', 'noopener');
   await expect(projectLink).toHaveCSS('cursor', 'pointer');

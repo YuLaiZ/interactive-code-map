@@ -3,29 +3,40 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>interactive-code-map demos</title>
+  <title>interactive-code-map — Interactive evidence-backed code maps for AI agents</title>
+  <meta name="description" content="Interactive evidence-backed code maps for AI agents: every assertion is tagged verified/inferred/unconfirmed, and only verified claims cite file + line evidence the agent actually inspected. Explore the live demo in English or Simplified Chinese. 面向 AI 代理的交互式证据图谱：每条断言标注证据状态，只有 verified 结论引用真实文件与行号。选择英文或简体中文演示。">
+  <link rel="canonical" href="https://yulaiz.github.io/interactive-code-map/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="interactive-code-map — Interactive evidence-backed code maps for AI agents">
+  <meta property="og:description" content="Interactive evidence-backed code maps for AI agents: every assertion is tagged verified/inferred/unconfirmed, and only verified claims cite file + line evidence the agent actually inspected. Explore the live demo in English or Simplified Chinese. 面向 AI 代理的交互式证据图谱：每条断言标注证据状态，只有 verified 结论引用真实文件与行号。选择英文或简体中文演示。">
+  <meta property="og:url" content="https://yulaiz.github.io/interactive-code-map/">
+  <meta name="twitter:card" content="summary">
   <style>
     :root {
       color-scheme: dark;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #07111f;
       color: #e8f1ff;
+      /* 三态颜色与 renderer 图例保持一致 */
+      --icm-verified: #42d691;
+      --icm-inferred: #ffc15a;
+      --icm-unconfirmed: #ff7c7c;
     }
     * { box-sizing: border-box; }
     body {
       min-height: 100vh;
       margin: 0;
-      display: grid;
-      place-items: center;
-      padding: 28px;
+      display: flex;
+      justify-content: center;
+      padding: 16px;
       background:
         radial-gradient(circle at 15% 12%, rgba(45, 212, 191, .18), transparent 32rem),
         radial-gradient(circle at 84% 92%, rgba(99, 102, 241, .2), transparent 35rem),
         #07111f;
     }
-    main { width: min(100%, 780px); }
+    main { width: min(100%, 780px); margin: auto 0; }
     .eyebrow {
-      margin: 0 0 16px;
+      margin: 0 0 12px;
       color: #75e6d2;
       font-size: .76rem;
       font-weight: 750;
@@ -50,6 +61,7 @@
       outline: none;
     }
     .project-link-icon { font-size: 1.25em; line-height: 1; }
+    .project-link-separator { opacity: .55; margin: 0 .12em; }
     .project-link-destination {
       display: inline-flex;
       align-items: center;
@@ -61,25 +73,108 @@
       letter-spacing: .08em;
     }
     h1 {
-      max-width: 13ch;
       margin: 0;
-      font-size: clamp(2.5rem, 8vw, 5.4rem);
-      line-height: .95;
-      letter-spacing: -.065em;
+      font-size: clamp(2.3rem, 5.6vw, 3rem);
+      line-height: 1.02;
+      letter-spacing: -.055em;
     }
     h1 span { display: block; }
-    h1 span + span {
-      margin-top: .22em;
+    h1 .h1-sub {
+      margin-top: .32em;
       color: #c9d9ef;
-      font-size: .56em;
-      letter-spacing: -.04em;
+      font-size: .52em;
+      font-weight: 450;
+      letter-spacing: -.035em;
     }
     .intro {
-      max-width: 56ch;
-      margin: 26px 0 34px;
+      max-width: 62ch;
+      margin: 12px 0 0;
       color: #b9c8df;
-      font-size: clamp(1rem, 2vw, 1.18rem);
-      line-height: 1.65;
+      font-size: clamp(1rem, 2vw, 1.12rem);
+      line-height: 1.55;
+    }
+    .intro span { display: block; }
+    .intro .intro-zh {
+      margin-top: .3em;
+      color: #9fb3d1;
+      font-size: .92em;
+    }
+    .evidence-sample {
+      display: inline-block;
+      margin: 10px 0 0;
+      padding: 12px 16px;
+      border: 1px solid #2e4968;
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgb(22 38 62 / 98%), rgb(13 24 40 / 98%));
+      box-shadow: 0 22px 48px rgb(0 0 0 / 34%);
+    }
+    .evidence-sample-caption {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #eef5ff;
+    }
+    .evidence-sample-caption [lang="zh-CN"] { color: #aabbd0; font-weight: 600; }
+    .evidence-sample ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .evidence-sample .evidence.verified { color: var(--icm-verified); }
+    .evidence-sample .ev-path {
+      color: #eef5ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    .evidence-sample .ev-symbol,
+    .evidence-sample .ev-lines { color: currentcolor; }
+    .legend {
+      max-width: 64ch;
+      margin: 12px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 6px;
+    }
+    .legend li {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: .55em;
+      font-size: .94rem;
+    }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex: none;
+      align-self: center;
+    }
+    .dot.verified { background: var(--icm-verified); }
+    .dot.inferred { background: var(--icm-inferred); }
+    .dot.unconfirmed { background: var(--icm-unconfirmed); }
+    .legend-term {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-weight: 700;
+      font-size: .9rem;
+      color: #e8f1ff;
+    }
+    .legend-zh { color: #9fb3d1; font-size: .92em; }
+    .legend-note { color: #8296b4; font-size: .92em; }
+    .demos-heading {
+      margin: 16px 0 14px;
+      display: flex;
+      align-items: baseline;
+      gap: .6em;
+      color: #98abc8;
+      font-size: .78rem;
+      font-weight: 750;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .demos-heading [lang="zh-CN"] {
+      color: #8296b4;
+      font-weight: 650;
+      letter-spacing: .06em;
+      text-transform: none;
     }
     .demos {
       display: grid;
@@ -88,8 +183,8 @@
     }
     .demo {
       position: relative;
-      min-height: 206px;
-      padding: 24px;
+      min-height: 124px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -121,23 +216,46 @@
       outline: none;
     }
     .language { color: #98abc8; font-size: .86rem; font-weight: 650; }
-    .name { z-index: 1; margin: 12px 0 0; font-size: 1.5rem; font-weight: 780; letter-spacing: -.035em; }
+    .name { z-index: 1; margin: 8px 0 0; font-size: 1.5rem; font-weight: 780; letter-spacing: -.035em; }
     .arrow { z-index: 1; color: #eaf4ff; font-size: 1.45rem; }
-    footer { margin-top: 24px; color: #8296b4; font-size: .84rem; }
+    .tech-note {
+      margin: 10px 0 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: .78rem;
+      color: #8296b4;
+      letter-spacing: .02em;
+    }
+    .tech-note span { display: block; }
+    .tech-note .tech-note-zh { margin-top: .3em; color: #6d82a3; }
+    footer { margin-top: 10px; color: #8296b4; font-size: .84rem; }
     @media (max-width: 580px) {
       body { padding: 22px; }
       .project-link { flex-wrap: wrap; }
       .project-link-destination { flex-basis: 100%; padding-left: 0; border-left: 0; }
       .demos { grid-template-columns: 1fr; }
-      .demo { min-height: 164px; }
     }
   </style>
 </head>
 <body>
   <main>
-    <p class="eyebrow"><a class="project-link" href="https://github.com/YuLaiZ/interactive-code-map" target="_blank" rel="noopener"><span>interactive-code-map</span><span class="project-link-destination">GitHub Repository <span class="project-link-icon" aria-hidden="true">↗</span></span></a></p>
-    <h1><span>Choose your demo.</span><span lang="zh-CN">选择你的演示版本。</span></h1>
-    <p class="intro">Explore the same evidence-backed code map in English or Simplified Chinese. 选择你偏好的语言版本，开始探索交互式证据图谱。</p>
+    <p class="eyebrow"><a class="project-link" href="https://github.com/YuLaiZ/interactive-code-map" target="_blank" rel="noopener"><span>interactive-code-map</span><span class="project-link-destination"><span lang="en">Install from GitHub</span><span class="project-link-separator" aria-hidden="true">·</span><span lang="zh-CN">从 GitHub 安装</span><span class="project-link-icon" aria-hidden="true">↗</span></span></a></p>
+    <h1><span>Interactive code maps</span><span>with evidence you can trace.</span><span class="h1-sub" lang="zh-CN">每条断言都有迹可循的交互式证据图谱。</span></h1>
+    <p class="intro">
+      <span>Turn a codebase directory and a business question — or a described non-code business process — into a single interactive, evidence-backed HTML map with explicit evidence states.</span>
+      <span class="intro-zh" lang="zh-CN">将代码库与业务问题，或一段口述的非代码业务流程，转换为单个可交互的 HTML 证据图谱，每条断言都显式标注证据状态。</span>
+    </p>
+    <div class="evidence-sample" role="img" aria-label="Sample evidence: verified, order-service.js line 5, symbol createOrder. 示例证据：已验证，order-service.js 第 5 行，符号 createOrder。">
+      <p class="evidence-sample-caption">Evidence status <span lang="zh-CN">证据状态</span></p>
+      <ul>
+        <li class="evidence verified"><span class="ev-path">order-service.js</span><span class="ev-symbol">:createOrder</span><span class="ev-lines"> [5-5]</span></li>
+      </ul>
+    </div>
+    <ul class="legend">
+      <li><span class="dot verified"></span><span class="legend-term">verified</span><span class="legend-zh">已验证</span><span class="legend-note">all evidence verified + inspected lines 全部证据已验证且行已检查</span></li>
+      <li><span class="dot inferred"></span><span class="legend-term">inferred</span><span class="legend-zh">推断</span><span class="legend-note">mixed or strong-but-unproven evidence 证据混合或有力但未证实</span></li>
+      <li><span class="dot unconfirmed"></span><span class="legend-term">unconfirmed</span><span class="legend-zh">待确认</span><span class="legend-note">no verified evidence 无已验证证据</span></li>
+    </ul>
+    <h2 class="demos-heading"><span lang="en">Choose your demo</span><span lang="zh-CN">选择你的演示版本</span></h2>
     <nav class="demos" aria-label="Choose a demo language">
       <a class="demo en" href="./en/" lang="en" target="_blank" rel="noopener">
         <div>
@@ -154,6 +272,10 @@
         <span class="arrow" aria-hidden="true">↗</span>
       </a>
     </nav>
+    <p class="tech-note">
+      <span>one HTML file · zero-dependency Node build · version-pinned CDN fallback</span>
+      <span class="tech-note-zh" lang="zh-CN">单个 HTML 文件 · 零依赖 Node 构建 · 版本锁定 CDN 兜底</span>
+    </p>
     <footer>Both demos use the same original sample repository and evidence model. 两个 Demo 使用同一份原创示例源码与证据模型。</footer>
   </main>
 </body>

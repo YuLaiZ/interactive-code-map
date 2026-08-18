@@ -47,6 +47,8 @@ node skill/renderer/build-html.mjs \
 
 `--repo-root` is the evidence root: the repository root for code maps, or the directory holding the user's supporting documents for a non-code business-process map. Verified evidence cites inspected lines in either case; statements that come only from a verbal description stay `inferred` or `unconfirmed`.
 
+`--canonical-url <https-url>` is optional: pass the published address when the map will live at a known URL, and the generated HTML carries a matching `<link rel="canonical">` and `og:url`. Every generated map also includes a `meta description` from `meta.summary`, plus `og:` and Twitter summary card tags.
+
 The builder validates the MapSpec, embeds the application code and CSS, and writes the output atomically. It never deletes the input MapSpec. The resulting HTML needs network access to load its pinned React, ReactDOM, and Mermaid runtime dependencies.
 
 ### CDN delivery profiles
@@ -68,7 +70,8 @@ For runnable original examples, see the [English MapSpec](examples/demo/expected
 node skill/renderer/build-html.mjs \
   --in examples/demo/expected-mapspec.json \
   --out examples/demo/expected-output.html \
-  --repo-root examples/demo/sample-repo
+  --repo-root examples/demo/sample-repo \
+  --canonical-url https://yulaiz.github.io/interactive-code-map/en/
 ~~~
 
 ~~~bash
@@ -76,7 +79,8 @@ node skill/renderer/build-html.mjs \
   --in examples/demo/expected-mapspec.zh-CN.json \
   --out examples/demo/expected-output.zh-CN.html \
   --repo-root examples/demo/sample-repo \
-  --cdn-profile china-friendly
+  --cdn-profile china-friendly \
+  --canonical-url https://yulaiz.github.io/interactive-code-map/zh-CN/
 ~~~
 
 ## Principles

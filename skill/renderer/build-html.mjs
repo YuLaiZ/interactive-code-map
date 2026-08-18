@@ -134,7 +134,11 @@ export function renderHtml(mapSpec, options = {}) {
     fixtureFilePath = null,
     fixtureRoots = null,
     cdnProfile = DEFAULT_CDN_PROFILE,
+    canonicalUrl = null,
   } = options;
+  if (canonicalUrl !== null && !/^https?:\/\/[^\s<>"]+$/i.test(canonicalUrl)) {
+    throw new Error('canonicalUrl 必须以 http:// 或 https:// 开头且不含空白或引号');
+  }
   const errors = validateMapSpec(mapSpec, {
     repoRoot,
     allowTestFixture,
@@ -156,6 +160,11 @@ export function renderHtml(mapSpec, options = {}) {
   let html = template;
   html = replaceToken(html, '__ICM_DOCUMENT_LANG__', staticCopy.documentLang);
   html = replaceToken(html, '__ICM_DOCUMENT_TITLE__', escapeHtmlText(mapSpec.meta.title));
+  html = replaceToken(html, '__ICM_META_DESCRIPTION__', escapeHtmlText(mapSpec.meta.summary));
+  const canonicalBlock = canonicalUrl
+    ? `\n  <link rel="canonical" href="${escapeHtmlText(canonicalUrl)}">\n  <meta property="og:url" content="${escapeHtmlText(canonicalUrl)}">`
+    : '';
+  html = replaceToken(html, '__ICM_CANONICAL_BLOCK__', canonicalBlock);
   html = replaceToken(html, '__ICM_GRAPH_VIEWPORT_LABEL__', escapeHtmlText(staticCopy.graphViewportLabel));
   html = replaceToken(html, '__ICM_FAILURE_HEADING__', escapeHtmlText(staticCopy.failureHeading));
   html = replaceToken(html, '__ICM_FAILURE_SUMMARY__', escapeHtmlText(staticCopy.failureSummary));
@@ -178,6 +187,7 @@ function parseArgs(argv) {
     output: null,
     repoRoot: null,
     cdnProfile: DEFAULT_CDN_PROFILE,
+    canonicalUrl: null,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -198,12 +208,14 @@ function parseArgs(argv) {
       args.allowTestFixture = true;
     } else if (argument === '--cdn-profile') {
       args.cdnProfile = optionValue(argument);
+    } else if (argument === '--canonical-url') {
+      args.canonicalUrl = optionValue(argument);
     } else {
       throw new Error(`未知参数: ${argument}`);
     }
   }
   if (!args.input || !args.output || !args.repoRoot) {
-    throw new Error('用法: node build-html.mjs --in <mapspec> --out <relative-html> --repo-root <evidence-root> [--cdn-profile global|china-friendly] [--allow-test-fixture]');
+    throw new Error('用法: node build-html.mjs --in <mapspec> --out <relative-html> --repo-root <evidence-root> [--cdn-profile global|china-friendly] [--canonical-url <https-url>] [--allow-test-fixture]');
   }
   return args;
 }
@@ -277,6 +289,9 @@ function main() {
 
     const mapSpec = JSON.parse(readFileSync(inputPath, 'utf8'));
     const options = { repoRoot: rootPath, cdnProfile: args.cdnProfile };
+    if (args.canonicalUrl !== null) {
+      options.canonicalUrl = args.canonicalUrl;
+    }
     if (args.allowTestFixture) {
       options.allowTestFixture = true;
       options.fixtureFilePath = realpathSync(inputPath);
