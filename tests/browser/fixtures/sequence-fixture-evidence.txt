@@ -1,0 +1,8 @@
+Fixture evidence file for the sequence payment-flow browser regression.
+The lines in this file are the only "inspected" verified-evidence target of
+tests/browser/fixtures/sequence-payment-flow.mapspec.json; they exist so the
+verified claimState can resolve to a real file with real line numbers.
+The business narrative itself is synthetic: no real codebase is described.
+Ledger posting, callback retry and audit emission are deliberately mixed
+across verified, inferred and unconfirmed claim states.
+This file is test-only and must never ship as product documentation.

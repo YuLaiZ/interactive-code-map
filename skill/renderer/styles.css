@@ -445,7 +445,7 @@ button:focus-visible,
   white-space: inherit !important;
 }
 
-/* 条件使用明确的文字前缀，而不是箭头或图形符号。这样它不会与分组页签的 ▦ 图标
+/* 条件使用菱形图标加描边胶囊，而不是文字前缀。这样它不会与分组页签的 ▦ 图标
  * 混淆，也不会被误读为一个待执行节点；只有 MapSpec labelKind=condition 才采用此样式。 */
 #graph-canvas svg .edgeLabel.icm-condition-edge-label foreignObject > div {
   display: inline-flex !important;
@@ -1061,4 +1061,147 @@ g.node.icm-node-state-unconfirmed rect {
   .icm-detail-scroll {
     padding: var(--icm-space-lg);
   }
+}
+
+/* ===================== sequence 时序图(diagramKind=sequence) =====================
+ * 与 flowchart 的节点/关系线样式无交集。默认 Mermaid 主题假定浅色背景,以下
+ * 规则把参与者、生命线、消息、帧与激活条统一映射到本页深色色板,并为消息
+ * 记录(文本/线/序号)与参与者提供悬停、选中(替代钉住)与焦点视觉。 */
+
+#graph-canvas svg rect.actor {
+  fill: var(--icm-node-surface) !important;
+  stroke: var(--icm-node-border) !important;
+  stroke-width: 1.75px !important;
+  transition: stroke 140ms ease, stroke-width 140ms ease, filter 140ms ease;
+}
+
+#graph-canvas svg text.actor,
+#graph-canvas svg text.actor tspan {
+  fill: var(--icm-text) !important;
+  font-weight: 650 !important;
+}
+
+#graph-canvas svg .actor-line {
+  stroke: var(--icm-graph-line) !important;
+  stroke-width: 1.4px !important;
+  stroke-dasharray: 4 4;
+}
+
+#graph-canvas svg [class*='activation'] {
+  fill: rgb(113 173 255 / 16%) !important;
+  stroke: var(--icm-accent) !important;
+  stroke-width: 1px !important;
+}
+
+#graph-canvas svg .loopLine {
+  stroke: #476f96 !important;
+  stroke-width: 1.2px !important;
+}
+
+#graph-canvas svg .labelBox {
+  fill: var(--icm-edge-label-surface) !important;
+  stroke: var(--icm-cluster-border) !important;
+  stroke-width: 1px !important;
+}
+
+#graph-canvas svg .labelText,
+#graph-canvas svg .labelText tspan {
+  fill: var(--icm-accent) !important;
+  font-weight: 700 !important;
+}
+
+#graph-canvas svg .loopText,
+#graph-canvas svg .loopText tspan,
+#graph-canvas svg .sectionTitle,
+#graph-canvas svg .sectionTitle tspan {
+  fill: var(--icm-text-muted) !important;
+  font-weight: 600 !important;
+}
+
+/* 消息线与文本的三态:状态点是强语义,线按证据状态弱着色以便整图扫描。 */
+#graph-canvas svg .messageLine0,
+#graph-canvas svg .messageLine1 {
+  stroke: var(--icm-graph-line) !important;
+  stroke-width: 1.75px !important;
+  transition: stroke 140ms ease, stroke-width 140ms ease, filter 140ms ease;
+}
+
+#graph-canvas svg .messageLine0.icm-state-verified,
+#graph-canvas svg .messageLine1.icm-state-verified {
+  stroke: var(--icm-verified) !important;
+}
+
+#graph-canvas svg .messageLine0.icm-state-inferred,
+#graph-canvas svg .messageLine1.icm-state-inferred {
+  stroke: var(--icm-inferred) !important;
+}
+
+#graph-canvas svg .messageLine0.icm-state-unconfirmed,
+#graph-canvas svg .messageLine1.icm-state-unconfirmed {
+  stroke: var(--icm-unconfirmed) !important;
+}
+
+#graph-canvas svg text.messageText,
+#graph-canvas svg text.messageText tspan {
+  fill: var(--icm-text) !important;
+  font-weight: 600 !important;
+}
+
+#graph-canvas svg text.sequenceNumber,
+#graph-canvas svg text.sequenceNumber tspan {
+  fill: var(--icm-text-muted) !important;
+  font-weight: 700 !important;
+}
+
+/* 状态点:与 flowchart 节点状态点同一套三态色;深色描边保证在浅色激活条上可辨。 */
+#graph-canvas svg .icm-sequence-state-dot {
+  stroke: #071321;
+  stroke-width: 2px;
+}
+
+#graph-canvas svg .icm-sequence-state-dot.icm-node-evidence-verified { fill: var(--icm-verified); }
+#graph-canvas svg .icm-sequence-state-dot.icm-node-evidence-inferred { fill: var(--icm-inferred); }
+#graph-canvas svg .icm-sequence-state-dot.icm-node-evidence-unconfirmed { fill: var(--icm-unconfirmed); }
+
+/* 可交互元素(消息文本/线/序号、参与者):指针与焦点视觉与 flowchart 一致。 */
+#graph-canvas svg .icm-sequence-interactive {
+  cursor: pointer;
+}
+
+#graph-canvas svg .icm-sequence-interactive:focus {
+  outline: none;
+}
+
+#graph-canvas svg g[data-icm-participant-id]:hover rect.actor,
+#graph-canvas svg g[data-icm-participant-id].icm-sequence-selected rect.actor,
+#graph-canvas svg g[data-icm-participant-id]:focus-visible rect.actor {
+  stroke: #f0fbff !important;
+  stroke-width: 3.5px !important;
+  filter:
+    drop-shadow(0 0 2px rgb(255 255 255 / 92%))
+    drop-shadow(0 0 12px rgb(111 201 255 / 92%));
+}
+
+#graph-canvas svg text.messageText:hover,
+#graph-canvas svg .icm-sequence-selected text.messageText,
+#graph-canvas svg text.messageText.icm-sequence-selected,
+#graph-canvas svg text.messageText:focus-visible {
+  fill: #f0fbff !important;
+}
+
+#graph-canvas svg .messageLine0:hover,
+#graph-canvas svg .messageLine1:hover,
+#graph-canvas svg .messageLine0.icm-sequence-selected,
+#graph-canvas svg .messageLine1.icm-sequence-selected,
+#graph-canvas svg .messageLine0:focus-visible,
+#graph-canvas svg .messageLine1:focus-visible {
+  stroke: #f0fbff !important;
+  stroke-width: 3.35px !important;
+  filter: drop-shadow(0 0 4px rgb(111 201 255 / 86%));
+}
+
+#graph-canvas svg text.sequenceNumber.icm-sequence-selected,
+#graph-canvas svg text.sequenceNumber:hover,
+#graph-canvas svg text.sequenceNumber:focus-visible {
+  fill: #f0fbff !important;
 }

@@ -19,6 +19,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import {
+  collectMapSpecNotices,
   containsAbsoluteFilesystemPath,
   isSensitiveContent,
   isSensitivePath,
@@ -30,7 +31,9 @@ const directory = path.dirname(fileURLToPath(import.meta.url));
 const template = readFileSync(path.join(directory, 'template.html'), 'utf8');
 const renderSource = readFileSync(path.join(directory, 'render.js'), 'utf8');
 const encoderSource = readFileSync(path.join(directory, 'mermaid-encoder.mjs'), 'utf8');
+const sequenceEncoderSource = readFileSync(path.join(directory, 'mermaid-sequence-encoder.mjs'), 'utf8');
 const dslSource = readFileSync(path.join(directory, 'mapspec-to-mermaid.mjs'), 'utf8');
+const sequenceDslSource = readFileSync(path.join(directory, 'mapspec-to-mermaid-sequence.mjs'), 'utf8');
 const styles = readFileSync(path.join(directory, 'styles.css'), 'utf8');
 
 /**
@@ -148,12 +151,22 @@ export function renderHtml(mapSpec, options = {}) {
   if (errors.length > 0) {
     throw new Error(`MapSpec 校验失败:\n  - ${errors.join('\n  - ')}`);
   }
+  // 软限提示(非错误):校验通过后输出,提醒优先精简/拆图;绝不悄悄删内容。
+  const notices = collectMapSpecNotices(mapSpec);
+  for (const notice of notices) {
+    console.warn(`提示: ${notice}`);
+  }
   const dependencies = resolveDependencyProfile(cdnProfile);
   const staticCopy = staticCopyForLocale(uiLocaleForMapSpec(mapSpec));
 
+  // 内联清单为显式维护:新增模块不加入此数组就不会进入产物。顺序沿用依赖序
+  // (编码器 → DSL 生成器 → render.js;sequence 两模块与 flowchart 两模块互不
+  // 依赖)。render.js 以 IIFE 引用这些顶层函数。
   const rendererScript = [
     stripModuleSyntax(encoderSource, 'mermaid-encoder.mjs'),
+    stripModuleSyntax(sequenceEncoderSource, 'mermaid-sequence-encoder.mjs'),
     stripModuleSyntax(dslSource, 'mapspec-to-mermaid.mjs'),
+    stripModuleSyntax(sequenceDslSource, 'mapspec-to-mermaid-sequence.mjs'),
     renderSource,
   ].join('\n');
 

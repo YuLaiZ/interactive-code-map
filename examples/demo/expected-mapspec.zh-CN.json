@@ -7,7 +7,7 @@
     "languageProfile": "javascript-esm",
     "uiLocale": "zh-CN",
     "layoutDirection": "TD",
-    "summary": "本示例刻意覆盖十个分组和十四个节点。订单入口分流到商品目录、库存、支付令牌、支付金额和横切审计；库存保留与金额计算再和支付校验汇合至授权步骤。它覆盖分支、汇合、跨分组连线，以及推断和待确认路径。所有已验证结论都指向示例源码的具体行。"
+    "summary": "本示例刻意覆盖十个分组和十四个节点。订单入口分流到商品目录、库存、支付令牌、支付金额和横切审计；预留循环逐项校验目录、扣减库存并累计目录价格总额，令牌、金额与预留持有检查再汇合至授权步骤。它覆盖分支、汇合、跨分组连线，以及推断和待确认路径。所有已验证结论都指向示例源码的具体行。"
   },
   "nodes": [
     {
@@ -257,7 +257,7 @@
         }
       ],
       "detail": {
-        "summary": "每个商品必须存在且库存足够，流程才会继续。",
+        "summary": "失败的商品本身不会被扣减；循环中此前商品的扣减不会回滚。",
         "segments": [
           {
             "kind": "value",
@@ -365,7 +365,7 @@
     },
     {
       "id": "n8",
-      "title": "支付接口",
+      "title": "校验支付令牌",
       "category": "支付校验",
       "subgraph": "支付校验",
       "claimState": "verified",
@@ -380,11 +380,11 @@
         }
       ],
       "detail": {
-        "summary": "支付协作方负责在令牌和金额有效时创建授权结果。",
+        "summary": "支付协作方在缺少支付令牌时直接抛错，任何受理结果都必须先通过令牌守卫。",
         "segments": [
           {
             "kind": "schema",
-            "title": "接口输入",
+            "title": "令牌守卫",
             "headers": [
               "参数",
               "用途"
@@ -405,7 +405,7 @@
     },
     {
       "id": "n9",
-      "title": "传递支付金额",
+      "title": "校验支付金额为正",
       "category": "支付校验",
       "subgraph": "支付校验",
       "claimState": "verified",
@@ -420,11 +420,11 @@
         }
       ],
       "detail": {
-        "summary": "支付金额直接来自库存保留返回的 totalCents。",
+        "summary": "支付协作方拒绝 amountCents 为零或负数的输入；金额来自库存保留返回的 totalCents，可能为零——示例未做更完整的数值合法性校验。",
         "segments": [
           {
             "kind": "value",
-            "title": "数据交接",
+            "title": "金额守卫",
             "headers": [
               "来源",
               "目标",
@@ -634,7 +634,7 @@
         {
           "path": "receipt-renderer.js",
           "symbol": "makeReceipt",
-          "note": "示例模块中没有会员积分持久化代码。",
+          "note": "示例模块中没有审计调用、审计事件或审计持久化实现。",
           "state": "unconfirmed"
         }
       ],
@@ -682,7 +682,7 @@
     {
       "from": "n1",
       "to": "n3",
-      "label": "并行规范化商品",
+      "label": "规范化商品",
       "claimState": "verified",
       "evidence": [
         {
@@ -800,16 +800,25 @@
       ]
     },
     {
-      "from": "n3",
+      "from": "n7",
       "to": "n9",
-      "label": "计算预计支付金额",
+      "label": "扣款金额来自预留总额",
       "claimState": "verified",
       "evidence": [
         {
-          "path": "order-service.js",
-          "lineStart": 11,
-          "lineEnd": 11,
-          "symbol": "createOrder",
+          "path": "inventory-checker.js",
+          "lineStart": 15,
+          "lineEnd": 16,
+          "symbol": "reserveIngredients",
+          "note": "预留循环按每个成交商品的目录单价累计 totalCents。",
+          "state": "verified"
+        },
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 5,
+          "lineEnd": 7,
+          "symbol": "chargeCard",
+          "note": "金额守卫校验的是预留总额，不是归一化输出。",
           "state": "verified"
         }
       ]
@@ -938,4 +947,3 @@
     }
   ]
 }
-

@@ -7,11 +7,13 @@
 ## 工作流
 
 1. 明确输入边界。获取“仓库目录 + 需要回答的问题”，或“用户描述的非代码业务流程 + 可选的资料目录”。缺少范围时询问；不得根据提供目录或用户描述之外的内容推断事实。
-2. 生成前确认可选交互配置。询问：“是否将键盘操作与小视口可用性纳入本次 HTML 图谱的验收范围？（推荐）”用户已经明确表达的偏好也视为确认。如果用户未确认，仍继续生成图谱，但把这些能力视为本次交付范围外；不得将其报告或测试为已验收行为。不得仅因未选择而移除渲染器能力。生成产物的操作说明会显示主要命令：点击卡片查看详情、点击关系线钉住或取消与悬停同款的高亮、`Tab` 选择、`Enter` 打开或钉住、`Esc` 关闭并清除钉住；节点也支持空格打开。
+2. 生成前确认可选交互配置。询问：“是否将键盘操作与小视口可用性纳入本次 HTML 图谱的验收范围？（推荐）”用户已经明确表达的偏好也视为确认。如果用户未确认，仍继续生成图谱，但把这些能力视为本次交付范围外；不得将其报告或测试为已验收行为。不得仅因未选择而移除渲染器能力。生成产物的操作说明按图型显示主要命令：流程图为点击卡片查看详情、点击关系线钉住或取消与悬停同款的高亮、`Tab` 选择、`Enter` 打开或钉住、`Esc` 关闭并清除钉住（节点也支持空格打开）；时序图为点击消息或参与者查看详情并保持单选中高亮、`Tab` 选择、`Enter` 打开、`Esc` 关闭——关系线钉住不适用。
 3. 选择 CDN 交付 profile。默认使用 `global`；只有用户明确偏好中国大陆访问，或明确目标受众位于中国大陆时，才使用 `china-friendly`。对话语言只是弱信号，不是位置事实。只有当前环境能代表目标用户、且用户同意联网探测时，才可采用实际测速。只能选择随包提供的 profile；不得自行添加 CDN URL 或绕过 SRI。报告所选 profile 及理由。
 4. 仅在该边界内检查：代码仓库输入检查代码，业务流程输入检查用户提供的资料与陈述。将每项 MapSpec 断言标记为 verified、inferred 或 unconfirmed。
 5. 形成 MapSpec。以 [`mapspec-v1.schema.json`](references/mapspec-v1.schema.json) 为权威结构。每条 verified 证据都必须具有真实的相对路径和已按 `--repo-root` 检查过的行范围：代码仓库输入指向代码行，业务流程输入指向资料文件（如需求或流程 Markdown 文档）的行。仅来自用户口述、没有可检查文件的断言必须标记为 inferred 或 unconfirmed，绝不标为 verified。
+   慎重选择图型并写入 `meta.diagramKind`（缺省 `flowchart`，无需写字段）。问题问的是"谁在什么时刻调谁"——请求/响应交互、回调与重试循环、协议握手——用 `sequence`：声明 `participants` 与 `messages`（含 `loop`/`opt`/`alt` 帧、可选的 activation 配平，以及每个参与者和每条消息上的三态证据），不写 `nodes`/`edges`。问题问的是结构、依赖或分支归属时，保持 `flowchart`。两种阅读都需要时，基于同一份证据生成两张图谱，而不是混排。
    对每个交付图谱明确设置可选字段 `meta.uiLocale`：英文 Demo 使用 `en`；用户以中文沟通且未要求英文产物时默认使用 `zh-CN`。文档语言、图谱区域名称、依赖加载失败页、阅读说明、关系图例、条件标记、证据状态与操作说明等 renderer 固定 UI 文案必须全部随此字段一致切换，禁止出现中英混杂。每个节点还必须通过 renderer 左上角、与图例一致的小状态点和边框样式直接呈现本地化断言状态。`languageProfile` 只描述代码或业务来源，不决定 UI 语言。节点、分组与边的业务原文保持输入语言，除非用户明确要求翻译业务内容。
+   时序图必须遵守字面文本纪律：全部显示文本（`participant.title`、`message.label`、`frame.label`、`branches[].label`）单行、不得含 `\n`/`\r`；消息文本与参与者别名由 renderer 的 sequence 编码器统一编码，帧条件为纯文本直出、不得含 `&` `;` `#` `<` `>` `"` `$` `:` `%`——需要这些字符时改写措辞或移入消息 `detail`。单条 label 软限 40 码点（硬限 100，超限内容移入 `detail`）；单张图声明消息总数软限 30（硬限 60，超软限优先按场景拆成多张产物）。绝不绕过校验、绝不手工拼接 DSL 文本；activation 两个布尔不得同真、帧内禁止携带，外层激活可以包住整帧并按声明序线性配平。
 6. 生成或修改多分组图谱前，阅读 [`visual-quality-contract.zh-CN.md`](references/visual-quality-contract.zh-CN.md)。按其中的关系语义、路由边界、标签放置、语言和视觉验收规则执行。不得通过不断叠加临时路由改动修补复杂图；保留 Mermaid 的节点到节点走廊，只做文档规定的局部处理。
 7. 校验并生成产物。先检查 `node --version` 是否至少为 20；若不是，报告需要 Node.js 20 或更高版本，并为用户保留 MapSpec，不要尝试生成。
 8. 报告生成的相对 HTML 路径、证据状态的限制、已确认的交互与 CDN profile，以及实际完成的任何浏览器人工验证。未实际检查时，不得报告浏览器行为已验证。
@@ -47,13 +49,15 @@ node "<skill-root>/renderer/build-html.mjs" \
 3. 没有合适能力时，完成仅构建验证，并说明交互式浏览器行为仍未验证。
 4. 将 Playwright 浏览器安装视为可选后续步骤，而不是生成的一部分。如果需要完整 Playwright 回归、但没有兼容浏览器，说明 `npx playwright install chromium` 会下载受管理的 Chromium 浏览器，并先请求用户确认。没有明确确认时，绝不运行该命令、安装浏览器，或安装浏览器 / DevTools 插件。
 
-已执行浏览器验证、且渲染后存在 `window.interactiveCodeMap` 时，调用：
+已执行浏览器验证、且渲染后存在 `window.interactiveCodeMap` 时，按图型调用对应的生产自检 API（不得向生成的 HTML 添加仅供测试的全局变量）：
 
 ~~~javascript
-window.interactiveCodeMap.repairSubgraphTitles()
+// meta.diagramKind === "sequence"（缺省 flowchart 使用 repairSubgraphTitles）:
+window.interactiveCodeMap.verifySequenceMapping()
+// → { diagramKind, messageLineCount, sequenceNumberCount, declaredMessageCount, ok }
 ~~~
 
-使用此生产自检 API，不得向生成的 HTML 添加仅供测试的全局变量。
+flowchart 图调用 `window.interactiveCodeMap.repairSubgraphTitles()`；时序图调用 `verifySequenceMapping()` 并如实报告 `ok` 是否为 true。
 
 报告一项已完成的验证等级，以及使用的现有能力：
 

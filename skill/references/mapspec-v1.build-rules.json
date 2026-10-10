@@ -134,6 +134,86 @@
       "newline-only file line count: '\\n' counts 1 line, '\\n\\n' counts 2 lines (trailing empty segment removed) -> pass within range, reject beyond"
     ]
   },
+  "sequenceDiagramContract": {
+    "description": "Rules for meta.diagramKind=sequence that JSON Schema cannot express (code-point counting, cross-message pairing, DSL-context text contracts). Enforced by skill/renderer/validate-map-spec.mjs and the sequence DSL generator. Locked contracts were verified attack-by-attack against Mermaid 11.16.1 and must not be weakened.",
+    "displayedTextSingleLine": {
+      "description": "Every text that enters the sequence DSL must be single-line: participant.title, message.label, frame.label and branches[].label. Newlines (\\n, \\r, \\r\\n) are rejected by the validator and defensively re-asserted by the encoder/generator, because a newline injects a new DSL statement (a new participant, autonumber off, or a parse error — the consequence varies by injection position).",
+      "rules": [
+        "Reject \\n, \\r and \\r\\n in participant.title, message.label, frame.label and branches[].label",
+        "The encoder must not inject <br/> or any other newline substitute",
+        "Regression asserts structure counts (participants, message lines, sequence numbers) unchanged AND original text fully visible"
+      ]
+    },
+    "literalTextEncoding": {
+      "description": "Message labels and participant titles (quoted alias context) use Mermaid #code; entity syntax with a 9-character table, implemented as a single-pass character mapping. Chained replace is forbidden: it re-escapes the # and ; its own output introduces. Frame conditions are plain text (no entity encoding) — an entity inside a word wider than a narrow frame gets shredded by wrapLabel and sequence.wrap cannot disable that.",
+      "entityMap": {
+        "&": "#38;",
+        ";": "#59;",
+        "#": "#35;",
+        "\"": "#34;",
+        "<": "#60;",
+        ">": "#62;",
+        "$": "#36;",
+        ":": "#58;",
+        "%": "#37;"
+      },
+      "rules": [
+        "Single-pass character mapping only; chaining .replace calls is forbidden",
+        "$ blocks the $$...$$ math-rendering path (would produce foreignObject); : blocks wrap:/nowrap: control prefixes; % blocks %%{...}%% directive deletion, which silently removes text without changing any count",
+        "Frame conditions are validated to exclude the same 9 characters and all newlines; the generator re-asserts this defensively (plain-text output, no entity encoding)",
+        "Acceptance asserts structure unchanged AND original text fully visible, never merely that the generated string contains an escape sequence"
+      ]
+    },
+    "frameConditionCharacterContract": {
+      "rejectedCharacters": ["&", ";", "#", "<", ">", "\"", "$", ":", "%"],
+      "rules": [
+        "Reject these characters and all newlines in frame.label and branches[].label",
+        "Reword the condition or move the fact into a message detail when these characters are needed"
+      ]
+    },
+    "messageLabelLength": {
+      "description": "Length is counted in Unicode code points, NOT JavaScript .length (which counts UTF-16 code units).",
+      "softCapCodePoints": 40,
+      "hardCapCodePoints": 100,
+      "rules": [
+        "Above the soft cap the skill prompts to shorten and prefers moving content into detail",
+        "Above the hard cap validation rejects the MapSpec",
+        "Counting must use code-point iteration (e.g. [...text].length), never .length"
+      ]
+    },
+    "messageCount": {
+      "description": "Counted over recursively expanded declared messages (a loop containing two messages counts two, not multiplied by iterations).",
+      "softCap": 30,
+      "hardCap": 60,
+      "rules": [
+        "Above the soft cap the skill triggers one scope choice (prefer splitting by scenario into multiple maps); 31-60 allowed when the user explicitly needs the full chain",
+        "Above the hard cap validation rejects the MapSpec; never silently drop messages"
+      ]
+    },
+    "participantIdMapping": {
+      "description": "Participant ids legal per the node-id regex can collide with sequence syntax keywords (end, loop, alt, autonumber, participant) and fail to parse as endpoints. The generator deterministically maps declared order to internal safe ids icm_p1, icm_p2, ... used on the participant line and every endpoint. MapSpec, selection keys, evidence and detail views always use the original id.",
+      "rules": [
+        "No keyword blacklist (unmaintainable)",
+        "The generated DSL must not leak an original id as an endpoint",
+        "Selection keys are participant:<id> and message:<recursive-path> (e.g. message:2.1), always built from original ids"
+      ]
+    },
+    "activationPairing": {
+      "rules": [
+        "activatesTo and deactivatesFrom must not both be true on one message",
+        "Messages inside frames (loop/opt/alt, any depth) must not carry either activation boolean",
+        "An outer activation may wrap whole frames (activate, then any frames without activation, then deactivate) — validated against Mermaid 11.16.1",
+        "Pairing is linear over declaration order: each activation must meet a deactivation for the same participant later at the same or an outer level; repeated activation of an already-active participant is rejected; dangling activation or deactivation is rejected"
+      ]
+    },
+    "mappingAndSelfCheck": {
+      "rules": [
+        "The mapping unit is the message record: the document-order contiguous block (text set, message line, lifeline segment, sequence number) — never a text.messageText count (multi-line texts would split)",
+        "Renderer self-check asserts .messageLine0/.messageLine1 count == recursively declared message count and text.sequenceNumber count == the same count",
+        "Whole-artifact foreignObject count must be 0 for sequence maps"
+      ]
+    }
+  },
   "strictValidationCommand": {
     "description": "Canonical command to validate a MapSpec against the schema in strict mode. It is pinned through package-lock.json and invoked by tests/mapspec/ajv-strict.mjs.",
     "command": "ajv validate -s skill/references/mapspec-v1.schema.json -d <mapspec.json> --strict=true --strict-required=true --spec=draft2020",

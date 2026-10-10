@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "title": "Fit geometry counter-example (fixture)",
+    "question": "Fixture: an eight-participant, thirty-message sequence whose last message sits at the bottom-right of the canvas, so the Fit safety-band computation is exercised against both the top controls and the bottom legend.",
+    "scope": "TEST-ONLY fixture marker: synthetic geometry fixture for the Fit-safety browser regression; NOT a real codebase. meta.languageProfile === 'fixture' marks it test-only — production build-html.mjs MUST reject it; tests admit it only under --allow-test-fixture for files under tests/**/fixtures/**. All evidence is inferred and intentionally references a path that does not exist.",
+    "languageProfile": "fixture",
+    "uiLocale": "en",
+    "diagramKind": "sequence",
+    "summary": "A ring of thirty inferred messages across eight participants ends with a message between the two right-most lifelines. The browser harness asserts the two-state Fit contract: the initial read view must keep the top controls clear (bottom content may run under the legend overlay by design), and after clicking Fit the whole layout must clear both the top controls and the bottom legend; reverting the legend height computation to the pre-fix formula must fail this fixture."
+  },
+  "participants": [
+    {
+      "id": "s1",
+      "title": "Service 1",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "Service 2",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "title": "Service 3",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "title": "Service 4",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "title": "Service 5",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "title": "Service 6",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "s7",
+      "title": "Service 7",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "s8",
+      "title": "Service 8",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "from": "s1",
+      "to": "s2",
+      "label": "Step 1",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s2",
+      "to": "s3",
+      "label": "Step 2",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s3",
+      "to": "s4",
+      "label": "Step 3",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s4",
+      "to": "s5",
+      "label": "Step 4",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s5",
+      "to": "s6",
+      "label": "Step 5",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s6",
+      "to": "s7",
+      "label": "Step 6",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s7",
+      "to": "s8",
+      "label": "Step 7",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s8",
+      "to": "s1",
+      "label": "Step 8",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s1",
+      "to": "s2",
+      "label": "Step 9",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s2",
+      "to": "s3",
+      "label": "Step 10",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s3",
+      "to": "s4",
+      "label": "Step 11",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s4",
+      "to": "s5",
+      "label": "Step 12",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s5",
+      "to": "s6",
+      "label": "Step 13",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s6",
+      "to": "s7",
+      "label": "Step 14",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s7",
+      "to": "s8",
+      "label": "Step 15",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s8",
+      "to": "s1",
+      "label": "Step 16",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s1",
+      "to": "s2",
+      "label": "Step 17",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s2",
+      "to": "s3",
+      "label": "Step 18",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s3",
+      "to": "s4",
+      "label": "Step 19",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s4",
+      "to": "s5",
+      "label": "Step 20",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s5",
+      "to": "s6",
+      "label": "Step 21",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s6",
+      "to": "s7",
+      "label": "Step 22",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s7",
+      "to": "s8",
+      "label": "Step 23",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s8",
+      "to": "s1",
+      "label": "Step 24",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s1",
+      "to": "s2",
+      "label": "Step 25",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s2",
+      "to": "s3",
+      "label": "Step 26",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s3",
+      "to": "s4",
+      "label": "Step 27",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s4",
+      "to": "s5",
+      "label": "Step 28",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s5",
+      "to": "s6",
+      "label": "Step 29",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "s8",
+      "to": "s7",
+      "label": "Final right-edge message",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    }
+  ]
+}

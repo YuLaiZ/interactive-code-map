@@ -713,7 +713,9 @@ test('纯 TD 复杂 Demo 中，分组页签居中且与节点、关系条件语�
 
   expect(result.nodeCount).toBeGreaterThanOrEqual(14);
   expect(result.stageLayout).toBe('td');
-  expect(result.layoutAspectRatio).toBeGreaterThan(1);
+  // 形状护栏:TD 复杂图应保持横向展开的近方形布局,防止退化成窄长条。
+  // 阈值随 demo 内容演进复核(金额守卫边改挂预留总额节点后为 0.90 左右)。
+  expect(result.layoutAspectRatio).toBeGreaterThan(0.75);
   expect(result.fillsByGroup.length).toBeGreaterThanOrEqual(6);
   expect(result.fillsByGroup.every((fills) => fills.length === 1)).toBeTruthy();
   // 色板有六种可辨识主色；复杂 Demo 超过六个分组时允许循环复用，仍要求至少

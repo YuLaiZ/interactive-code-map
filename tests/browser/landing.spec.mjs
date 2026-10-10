@@ -19,12 +19,20 @@ test('入口页项目链接具有明确的点击区域并跳转到仓库', async
   await expect(projectLink).toHaveAttribute('target', '_blank');
   await expect(projectLink).toHaveAttribute('rel', 'noopener');
   await expect(projectLink).toHaveCSS('cursor', 'pointer');
-  for (const demoLink of [page.locator('.demo.en'), page.locator('.demo.zh')]) {
-    await expect(demoLink).toHaveAttribute('target', '_blank');
-    await expect(demoLink).toHaveAttribute('rel', 'noopener');
+  // 每种图型一张卡,语言收进卡内链接;断言四个跳转链接的地址与外开属性。
+  const demoLinks = [
+    { card: '.demo.en', href: './en/', name: 'English demo' },
+    { card: '.demo.en', href: './zh-CN/', name: '中文 Demo' },
+    { card: '.demo.en-seq', href: './en/sequence/', name: 'English demo' },
+    { card: '.demo.en-seq', href: './zh-CN/sequence/', name: '中文 Demo' },
+  ];
+  for (const item of demoLinks) {
+    const link = page.locator(`${item.card} .demo-link[href="${item.href}"]`);
+    await expect(link).toHaveCount(1);
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', 'noopener');
+    await expect(link).toContainText(item.name);
   }
-  await expect(page.locator('.demo.en')).toHaveAttribute('href', './en/');
-  await expect(page.locator('.demo.zh')).toHaveAttribute('href', './zh-CN/');
   const box = await projectLink.boundingBox();
   expect(box?.height).toBeGreaterThanOrEqual(44);
   const repositoryPagePromise = page.context().waitForEvent('page');

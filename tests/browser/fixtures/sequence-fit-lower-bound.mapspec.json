@@ -1,0 +1,508 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "title": "Wide fit lower bound (fixture)",
+    "question": "Fixture: a twelve-participant sequence with 93-code-point titles at the length cap, whose full-map fit scale falls below the legacy 0.15 zoom floor — Fit must still reach a fully visible layout.",
+    "scope": "TEST-ONLY fixture marker: synthetic width fixture for the Fit lower-bound browser regression; NOT a real codebase. meta.languageProfile === 'fixture' marks it test-only — production build-html.mjs MUST reject it; tests admit it only under --allow-test-fixture for files under tests/**/fixtures/**. All evidence is inferred and intentionally references a path that does not exist.",
+    "languageProfile": "fixture",
+    "uiLocale": "en",
+    "diagramKind": "sequence",
+    "summary": "Thirty inferred messages ring across twelve participants whose titles run to 93 code points, producing a layout whose full-map fit scale is far below the legacy 0.15 zoom floor. The browser harness asserts that clicking Fit brings every participant and message inside the viewport horizontally, and that the zoom-out control can go below the legacy floor instead of stopping half-way."
+  },
+  "participants": [
+    {
+      "id": "n1",
+      "title": "Long-named billing service 01 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "n2",
+      "title": "Long-named billing service 02 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "n3",
+      "title": "Long-named billing service 03 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "n4",
+      "title": "Long-named billing service 04 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "n5",
+      "title": "Long-named billing service 05 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "n6",
+      "title": "Long-named billing service 06 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "n7",
+      "title": "Long-named billing service 07 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "n8",
+      "title": "Long-named billing service 08 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "n9",
+      "title": "Long-named billing service 09 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "n10",
+      "title": "Long-named billing service 10 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "n11",
+      "title": "Long-named billing service 11 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "n12",
+      "title": "Long-named billing service 12 for regional settlement corridor xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "label": "Corridor step 1",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "label": "Corridor step 2",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "label": "Corridor step 3",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "label": "Corridor step 4",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "label": "Corridor step 5",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "label": "Corridor step 6",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n7",
+      "to": "n8",
+      "label": "Corridor step 7",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n8",
+      "to": "n9",
+      "label": "Corridor step 8",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n9",
+      "to": "n10",
+      "label": "Corridor step 9",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n10",
+      "to": "n11",
+      "label": "Corridor step 10",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n11",
+      "to": "n12",
+      "label": "Corridor step 11",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n12",
+      "to": "n1",
+      "label": "Corridor step 12",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n1",
+      "to": "n2",
+      "label": "Corridor step 13",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "label": "Corridor step 14",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "label": "Corridor step 15",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "label": "Corridor step 16",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "label": "Corridor step 17",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "label": "Corridor step 18",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n7",
+      "to": "n8",
+      "label": "Corridor step 19",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n8",
+      "to": "n9",
+      "label": "Corridor step 20",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n9",
+      "to": "n10",
+      "label": "Corridor step 21",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n10",
+      "to": "n11",
+      "label": "Corridor step 22",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n11",
+      "to": "n12",
+      "label": "Corridor step 23",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n12",
+      "to": "n1",
+      "label": "Corridor step 24",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n1",
+      "to": "n2",
+      "label": "Corridor step 25",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "label": "Corridor step 26",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "label": "Corridor step 27",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "label": "Corridor step 28",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "label": "Corridor step 29",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "label": "Corridor step 30",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    }
+  ]
+}

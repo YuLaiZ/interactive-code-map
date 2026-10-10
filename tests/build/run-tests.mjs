@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const tests = ['mermaid.test.mjs', 'deps-config.test.mjs', 'build-html.test.mjs'];
+const tests = ['mermaid.test.mjs', 'mermaid-sequence.test.mjs', 'deps-config.test.mjs', 'build-html.test.mjs'];
 let failed = false;
 
 for (const testFile of tests) {

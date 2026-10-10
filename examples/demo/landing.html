@@ -28,7 +28,7 @@
       margin: 0;
       display: flex;
       justify-content: center;
-      padding: 16px;
+      padding: 10px 16px;
       background:
         radial-gradient(circle at 15% 12%, rgba(45, 212, 191, .18), transparent 32rem),
         radial-gradient(circle at 84% 92%, rgba(99, 102, 241, .2), transparent 35rem),
@@ -183,7 +183,7 @@
     }
     .demo {
       position: relative;
-      min-height: 124px;
+      min-height: 150px;
       padding: 20px;
       display: flex;
       flex-direction: column;
@@ -191,10 +191,7 @@
       overflow: hidden;
       border: 1px solid rgba(190, 214, 255, .2);
       border-radius: 19px;
-      color: inherit;
-      text-decoration: none;
       background: rgba(14, 30, 51, .72);
-      transition: transform .18s ease, border-color .18s ease, background .18s ease;
     }
     .demo::after {
       position: absolute;
@@ -208,16 +205,66 @@
       filter: blur(1px);
     }
     .demo.en::after { background: #577cff; }
-    .demo.zh::after { background: #22c7a5; }
-    .demo:hover, .demo:focus-visible {
-      transform: translateY(-4px);
-      border-color: rgba(180, 232, 255, .72);
-      background: rgba(20, 42, 70, .94);
+    .demo.en-seq::after { background: #8b5cf6; }
+    .demo-kind {
+      margin: 0;
+      color: #98abc8;
+      font-size: .78rem;
+      font-weight: 750;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .demo-kind [lang="zh-CN"] {
+      color: #8296b4;
+      font-weight: 650;
+      letter-spacing: .05em;
+      text-transform: none;
+    }
+    .demo-name {
+      z-index: 1;
+      margin: 6px 0 0;
+      font-size: 1.5rem;
+      font-weight: 780;
+      letter-spacing: -.035em;
+    }
+    .demo-blurb {
+      z-index: 1;
+      margin: 6px 0 0;
+      color: #9fb3d1;
+      font-size: .84rem;
+      line-height: 1.4;
+    }
+    .demo-blurb span {
+      display: block;
+      margin-top: .18em;
+      color: #8fa3c2;
+    }
+    .demo-links {
+      z-index: 1;
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .demo-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .4em;
+      min-height: 40px;
+      padding: 7px 14px;
+      border: 1px solid rgba(190, 214, 255, .32);
+      border-radius: 999px;
+      color: #eaf4ff;
+      font-size: .9rem;
+      font-weight: 650;
+      text-decoration: none;
+      transition: border-color .18s ease, background .18s ease;
+    }
+    .demo-link:hover, .demo-link:focus-visible {
+      border-color: rgba(180, 232, 255, .78);
+      background: rgba(24, 48, 78, .9);
       outline: none;
     }
-    .language { color: #98abc8; font-size: .86rem; font-weight: 650; }
-    .name { z-index: 1; margin: 8px 0 0; font-size: 1.5rem; font-weight: 780; letter-spacing: -.035em; }
-    .arrow { z-index: 1; color: #eaf4ff; font-size: 1.45rem; }
     .tech-note {
       margin: 10px 0 0;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
@@ -256,27 +303,34 @@
       <li><span class="dot unconfirmed"></span><span class="legend-term">unconfirmed</span><span class="legend-zh">待确认</span><span class="legend-note">no verified evidence 无已验证证据</span></li>
     </ul>
     <h2 class="demos-heading"><span lang="en">Choose your demo</span><span lang="zh-CN">选择你的演示版本</span></h2>
-    <nav class="demos" aria-label="Choose a demo language">
-      <a class="demo en" href="./en/" lang="en" target="_blank" rel="noopener">
+    <nav class="demos" aria-label="Choose a demo">
+      <div class="demo en">
         <div>
-          <span class="language">English</span>
-          <p class="name">English demo</p>
+          <p class="demo-kind">Flowchart <span lang="zh-CN">流程图</span></p>
+          <p class="demo-name">Flowchart demo</p>
+          <p class="demo-blurb">Structure, dependencies, and branching.<span lang="zh-CN">结构、依赖与分支。</span></p>
         </div>
-        <span class="arrow" aria-hidden="true">↗</span>
-      </a>
-      <a class="demo zh" href="./zh-CN/" lang="zh-CN" target="_blank" rel="noopener">
+        <div class="demo-links">
+          <a class="demo-link" href="./en/" lang="en" target="_blank" rel="noopener">English demo <span aria-hidden="true">↗</span></a>
+          <a class="demo-link" href="./zh-CN/" lang="zh-CN" target="_blank" rel="noopener">中文 Demo <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+      <div class="demo en-seq">
         <div>
-          <span class="language">简体中文</span>
-          <p class="name">中文 Demo</p>
+          <p class="demo-kind">Sequence <span lang="zh-CN">时序图</span></p>
+          <p class="demo-name">Sequence demo</p>
+          <p class="demo-blurb">Who calls whom, in what order — per-message evidence.<span lang="zh-CN">调用顺序与逐消息证据。</span></p>
         </div>
-        <span class="arrow" aria-hidden="true">↗</span>
-      </a>
+        <div class="demo-links">
+          <a class="demo-link" href="./en/sequence/" lang="en" target="_blank" rel="noopener">English demo <span aria-hidden="true">↗</span></a>
+          <a class="demo-link" href="./zh-CN/sequence/" lang="zh-CN" target="_blank" rel="noopener">中文 Demo <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
     </nav>
     <p class="tech-note">
       <span>one HTML file · zero-dependency Node build · version-pinned CDN fallback</span>
       <span class="tech-note-zh" lang="zh-CN">单个 HTML 文件 · 零依赖 Node 构建 · 版本锁定 CDN 兜底</span>
     </p>
-    <footer>Both demos use the same original sample repository and evidence model. 两个 Demo 使用同一份原创示例源码与证据模型。</footer>
   </main>
 </body>
 </html>

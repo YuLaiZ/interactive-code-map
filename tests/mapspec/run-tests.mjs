@@ -31,6 +31,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   validateMapSpec,
+  collectMapSpecNotices,
   isSensitivePath,
   isSensitiveContent,
   containsAbsoluteFilesystemPath,
@@ -333,6 +334,211 @@ console.log('\n== 6. --repo-root verified 真实性(P0)==');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
+}
+
+// ---------- 7. sequence(diagramKind=sequence)专属校验 ----------
+// 覆盖端点存在性、显示文本单行、帧条件字符合同、activation 配平
+// (帧内禁变/外层包帧/线性配平)、递归计数与软限提示。
+console.log('\n== 7. sequence 专属校验 ==');
+{
+  const verifiedEvidence = [{ path: 'a.js', lineStart: 1, lineEnd: 2, state: 'verified' }];
+  const seqParticipant = (id, title, overrides = {}) => ({
+    id, title, claimState: 'verified', evidence: verifiedEvidence, ...overrides,
+  });
+  const seqMessage = (from, to, label, overrides = {}) => ({
+    from, to, label, claimState: 'verified', evidence: verifiedEvidence, ...overrides,
+  });
+  const seqSpec = (messages, participants) => ({
+    schemaVersion: 1,
+    meta: { title: 't', question: 'q', scope: 's', languageProfile: 'zh-CN', summary: 's', diagramKind: 'sequence' },
+    participants: participants || [seqParticipant('client', '客户端'), seqParticipant('order', '订单服务'), seqParticipant('pay', '支付网关')],
+    messages,
+  });
+
+  const happyPath = seqSpec([
+    seqMessage('client', 'order', '提交订单', { activation: { activatesTo: true } }),
+    {
+      frame: true,
+      kind: 'loop',
+      label: '回调重试最多三次',
+      messages: [
+        seqMessage('order', 'pay', '请求支付'),
+        {
+          frame: true,
+          kind: 'alt',
+          branches: [
+            { label: '重试未超上限', messages: [seqMessage('order', 'pay', '再次请求')] },
+            { label: '已达重试上限', messages: [seqMessage('order', 'client', '返回失败', { arrowKind: 'dashed' })] },
+          ],
+        },
+      ],
+    },
+    seqMessage('order', 'client', '订单完成', { arrowKind: 'dashed', activation: { deactivatesFrom: true } }),
+    seqMessage('client', 'client', '本地校验'),
+  ]);
+  assert(validateMapSpec(happyPath).length === 0, 'sequence 正向:同步调用 + 外层激活包 loop 帧 + 双分支 alt + 自消息通过');
+
+  const error = (spec) => validateMapSpec(spec);
+
+  const missingParticipants = seqSpec([seqMessage('client', 'order', 'x')]);
+  delete missingParticipants.participants;
+  assert(error(missingParticipants).includes('participants 必须为非空数组'), '缺 participants → 拒绝');
+
+  const unknownEndpoint = seqSpec([seqMessage('client', 'ghost', 'x')]);
+  assert(error(unknownEndpoint).some((e) => e.includes("指向未声明的参与者")), '未知端点 → 拒绝');
+
+  for (const [label, newline] of [
+    ['\\n', 'a\nb'],
+    ['\\r', 'a\rb'],
+    ['\\r\\n', 'a\r\nb'],
+  ]) {
+    const newlineSpec = seqSpec([seqMessage('client', 'order', newline)]);
+    assert(error(newlineSpec).some((e) => e.includes('含换行(sequence 显示文本必须单行)')), `label 换行(${label}) → 拒绝`);
+  }
+  const newlineTitle = seqSpec([seqMessage('client', 'order', 'x')], [seqParticipant('client', '甲\nparticipant C'), seqParticipant('order', '乙')]);
+  assert(error(newlineTitle).some((e) => e.includes('participants[0].title 含换行')), 'participant.title 换行注入 → 拒绝');
+
+  for (const [name, condition] of [
+    ['&', 'a & b'],
+    [';', 'a; b'],
+    ['#', 'a #x'],
+    ['<', 'a < b'],
+    ['>', 'a > b'],
+    ['"', 'a "b"'],
+    ['$', 'a $x$'],
+    [':', 'wrap: retry'],
+    ['%', 'retry %%{init}%%'],
+  ]) {
+    const frameCharSpec = seqSpec([{ frame: true, kind: 'loop', label: condition, messages: [seqMessage('client', 'order', 'x')] }]);
+    assert(error(frameCharSpec).some((e) => e.includes('含帧条件禁用字符')), `帧条件特殊字符 ${name} → 拒绝`);
+  }
+  const frameNewlineSpec = seqSpec([{ frame: true, kind: 'loop', label: 'retry\nautonumber off\nend', messages: [seqMessage('client', 'order', 'x')] }]);
+  assert(error(frameNewlineSpec).some((e) => e.includes('帧条件必须单行')), '帧条件换行注入 → 拒绝');
+  const branchNewlineSpec = seqSpec([{
+    frame: true,
+    kind: 'alt',
+    branches: [
+      { label: 'a\nparticipant C', messages: [seqMessage('client', 'order', 'x')] },
+      { label: 'b', messages: [seqMessage('client', 'order', 'y')] },
+    ],
+  }]);
+  assert(error(branchNewlineSpec).some((e) => e.includes('branches[0].label 含换行')), 'alt 分支条件换行 → 拒绝');
+
+  const overHardLabel = seqSpec([seqMessage('client', 'order', 'x'.repeat(101))]);
+  assert(error(overHardLabel).some((e) => e.includes('码点超过硬上限 100')), 'label 101 码点(硬限) → 拒绝');
+  const surrogateWithin = seqSpec([seqMessage('client', 'order', '🎉'.repeat(51))]);
+  assert(validateMapSpec(surrogateWithin).length === 0, '51 个 emoji(51 码点,102 UTF-16 code units)通过——码点计数,不用 .length');
+  const surrogateOverHard = seqSpec([seqMessage('client', 'order', '🎉'.repeat(101))]);
+  assert(error(surrogateOverHard).some((e) => e.includes('码点超过硬上限 100')), '101 个 emoji(101 码点) → 拒绝');
+
+  const bothTrue = seqSpec([seqMessage('client', 'order', 'x', { activation: { activatesTo: true, deactivatesFrom: true } })]);
+  assert(error(bothTrue).some((e) => e.includes('不得同真')), '两布尔同真 → 拒绝');
+  // activation 布尔类型严格校验:字符串/数字/null 不做隐式转换,防止生成器
+  // 只识别 === true 而静默丢掉激活声明。
+  for (const [name, flag] of [['字符串 "true"', 'true'], ['数字 1', 1], ['null', null]]) {
+    const badFlag = seqSpec([seqMessage('client', 'order', 'x', { activation: { activatesTo: flag } })]);
+    assert(error(badFlag).some((e) => e.includes('activation.activatesTo 必须为布尔值')), `activation.activatesTo 为${name} → 拒绝`);
+  }
+  const explicitFalse = seqSpec([seqMessage('client', 'order', 'x', { activation: { activatesTo: false, deactivatesFrom: false } })]);
+  assert(validateMapSpec(explicitFalse).length === 0, '显式 false 等价未激活 → 通过');
+  // 帧条件可选字段的类型严格校验:可选只等于允许省略,存在即必须为非 null 字符串。
+  for (const [name, value] of [['数字', 123], ['对象', { x: 1 }], ['数组', ['x']], ['null', null], ['布尔', true]]) {
+    const badFrame = seqSpec([{ frame: true, kind: 'loop', label: value, messages: [seqMessage('client', 'order', 'x')] }]);
+    assert(error(badFrame).some((e) => e.includes('messages[0].label 必须为字符串')), `帧条件为${name} → 拒绝`);
+  }
+  const frameWithoutLabel = seqSpec([{ frame: true, kind: 'loop', messages: [seqMessage('client', 'order', 'x')] }]);
+  assert(validateMapSpec(frameWithoutLabel).length === 0, '帧条件省略(loop 无 label) → 通过');
+  const frameEmptyLabel = seqSpec([{ frame: true, kind: 'loop', label: '', messages: [seqMessage('client', 'order', 'x')] }]);
+  assert(validateMapSpec(frameEmptyLabel).length === 0, '帧条件空字符串(loop 语境等价省略) → 通过');
+  const activationInFrame = seqSpec([{
+    frame: true,
+    kind: 'loop',
+    label: 'l',
+    messages: [seqMessage('client', 'order', 'x', { activation: { activatesTo: true } })],
+  }]);
+  assert(error(activationInFrame).some((e) => e.includes('帧内消息禁止携带 activation')), '帧内 activation → 拒绝');
+  const dangling = seqSpec([seqMessage('client', 'order', 'x', { activation: { activatesTo: true } })]);
+  assert(error(dangling).some((e) => e.includes('存在未配对的激活')), '悬空激活 → 拒绝');
+  const repeatedActivation = seqSpec([
+    seqMessage('client', 'order', 'x1', { activation: { activatesTo: true } }),
+    seqMessage('client', 'order', 'x2', { activation: { activatesTo: true } }),
+  ]);
+  assert(error(repeatedActivation).some((e) => e.includes('重复激活')), '重复激活 → 拒绝');
+  const deactivateInactive = seqSpec([seqMessage('client', 'order', 'x', { activation: { deactivatesFrom: true } })]);
+  assert(error(deactivateInactive).some((e) => e.includes('去激活未激活的参与者')), '去激活未激活参与者 → 拒绝');
+
+  const singleBranch = seqSpec([{ frame: true, kind: 'alt', branches: [{ label: 'a', messages: [seqMessage('client', 'order', 'x')] }] }]);
+  assert(error(singleBranch).some((e) => e.includes('alt 分支必须为至少 2 段')), 'alt 单分支 → 拒绝');
+  const altWithMessages = seqSpec([{
+    frame: true,
+    kind: 'alt',
+    label: 'c',
+    messages: [seqMessage('client', 'order', 'x')],
+    branches: [
+      { label: 'a', messages: [seqMessage('client', 'order', 'x')] },
+      { label: 'b', messages: [seqMessage('client', 'order', 'y')] },
+    ],
+  }]);
+  assert(error(altWithMessages).some((e) => e.includes('不允许同时携带 messages')), 'alt 同时携带 messages → 拒绝');
+  const loopWithBranches = seqSpec([{
+    frame: true,
+    kind: 'loop',
+    label: 'l',
+    messages: [seqMessage('client', 'order', 'x')],
+    branches: [
+      { label: 'a', messages: [seqMessage('client', 'order', 'x')] },
+      { label: 'b', messages: [seqMessage('client', 'order', 'y')] },
+    ],
+  }]);
+  assert(error(loopWithBranches).some((e) => e.includes('只有 alt 允许 branches')), 'loop 携带 branches → 拒绝');
+
+  const deepNesting = seqSpec([{
+    frame: true,
+    kind: 'loop',
+    label: 'a',
+    messages: [{
+      frame: true,
+      kind: 'opt',
+      label: 'b',
+      messages: [{
+        frame: true,
+        kind: 'opt',
+        label: 'c',
+        messages: [seqMessage('client', 'order', 'x')],
+      }],
+    }],
+  }]);
+  assert(error(deepNesting).some((e) => e.includes('帧嵌套深度超过上限 2')), '三层嵌套帧 → 拒绝');
+  const twoLevelNesting = seqSpec([{
+    frame: true,
+    kind: 'loop',
+    label: 'a',
+    messages: [{
+      frame: true,
+      kind: 'opt',
+      label: 'b',
+      messages: [seqMessage('client', 'order', 'x')],
+    }],
+  }]);
+  assert(validateMapSpec(twoLevelNesting).length === 0, '两层嵌套帧(深度 2) → 通过');
+
+  const flowchartWithParticipants = baseSpec();
+  flowchartWithParticipants.participants = [seqParticipant('client', '甲')];
+  assert(error(flowchartWithParticipants).includes('participants 仅 diagramKind=sequence 有效'), 'flowchart 携带 participants → 拒绝');
+  const sequenceWithNodes = seqSpec([seqMessage('client', 'order', 'x')]);
+  sequenceWithNodes.nodes = [{ id: 'n', title: 't', claimState: 'inferred', evidence: verifiedEvidence, detail: { summary: 's', segments: [] } }];
+  assert(error(sequenceWithNodes).some((e) => e.includes('diagramKind=sequence 禁止 nodes')), 'sequence 携带 nodes → 拒绝');
+  const sequenceWithBands = seqSpec([seqMessage('client', 'order', 'x')]);
+  sequenceWithBands.meta.layoutDirection = 'TD';
+  assert(error(sequenceWithBands).some((e) => e.includes('仅 flowchart 有效')), 'sequence 携带 layoutDirection → 拒绝');
+
+  const overHardCount = seqSpec(Array.from({ length: 61 }, (_unused, index) => seqMessage('client', 'order', 'm' + index)));
+  assert(error(overHardCount).some((e) => e.includes('超过硬上限 60')), '消息总数 61(递归展开) → 拒绝');
+  assert(collectMapSpecNotices(seqSpec(Array.from({ length: 31 }, (_unused, index) => seqMessage('client', 'order', 'm' + index))))
+    .some((n) => n.includes('超过软限 30')), '消息总数 31 → 软限提示(非错误)');
+  assert(collectMapSpecNotices(happyPath).length === 0, '软限内不产生提示');
+  const overSoftLabel = seqSpec([seqMessage('client', 'order', 'x'.repeat(41))]);
+  assert(collectMapSpecNotices(overSoftLabel).some((n) => n.includes('超过软限 40')), 'label 41 码点 → 软限提示(非错误)');
 }
 
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`);

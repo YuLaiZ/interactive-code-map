@@ -2,16 +2,26 @@
 
 > **简体中文** | [English](README.md)
 
-一个跨客户端 skill，将代码库证据或非代码业务流程描述转换为单个可交互的 HTML 证据图谱；它用结构化 MapSpec 分离调研与展示，并显式呈现证据状态。
+一个跨客户端 skill，将代码库证据或非代码业务流程描述转换为单个可交互的 HTML 证据图谱；它用结构化 MapSpec 分离调研与展示，并显式呈现证据状态。每张图谱按问题选择图型：结构与依赖读作流程图，而"谁在什么时刻调谁"类的交互（请求/响应、回调重试、协议握手）读作带逐消息证据的时序图。
 
 ## 效果演示
 
+### 流程图
+
 ![交互式证据图谱演示：缩放、拖动、关系高亮、点击钉住与行号证据](docs/assets/interactive-code-map-demo.zh-CN.gif)
+
+### 时序图
+
+按调用顺序阅读，查看条件分支，并打开消息背后的源码证据。
+
+![时序图演示：阅读视图、缩放、平移、消息证据、单选中高亮与全图概览](docs/assets/interactive-code-map-sequence-demo.zh-CN.gif)
 
 ## 在线 Demo
 
-- [中文 Demo](https://yulaiz.github.io/interactive-code-map/zh-CN/)
+- [中文 Demo](https://yulaiz.github.io/interactive-code-map/zh-CN/)（流程图）
+- [中文时序 Demo](https://yulaiz.github.io/interactive-code-map/zh-CN/sequence/)
 - [English demo](https://yulaiz.github.io/interactive-code-map/en/)
+- [English sequence demo](https://yulaiz.github.io/interactive-code-map/en/sequence/)
 
 ## 安装
 
@@ -64,7 +74,9 @@ node skill/renderer/build-html.mjs \
 
 每份生成图谱都有固定且本地化的三段说明：阅读说明、证据状态与操作。每张节点卡片的左上角还会直接显示与图例一致的小状态点，边框样式作为辅助提示。操作段会显示主要交互：点击卡片查看详情；点击任意关系线可钉住与悬停完全相同的高亮动画（同时仅一条，悬停机制不受影响），再次点击该线、按 `Esc` 或单击空白位置可取消，拖动画布不会误清；使用 `Tab` 选择卡片或关系线，`Enter` 打开或钉住，`Esc` 关闭详情面板并清除钉住。节点也支持空格作为等价的按钮操作。生成 HTML 的文档语言、图谱区域名称与依赖加载失败页也使用同一语言。上文的生成前确认仍决定键盘与小视口能力是否属于本次交付的验收范围。
 
-可直接查看原创的[英文 MapSpec](examples/demo/expected-mapspec.json)与[中文 MapSpec](examples/demo/expected-mapspec.zh-CN.json)。两者共享同一个小型示例源码目录、图谱结构、断言状态和证据数据；仅图谱读者可见文案与固定 UI 按语言本地化。英文 Demo 使用 `global`；中文 Demo 明确面向中国大陆访问者，使用 `china-friendly`。可用以下命令重新生成已提交的 HTML：
+时序图（`meta.diagramKind: "sequence"`）以生命线与有序消息替代节点卡片与关系线，并用 `loop`/`opt`/`alt` 帧表达重复、条件与互斥分支：参与者与消息各携带三态证据，每条消息自动编号，点击消息或参与者会打开对应证据详情并保持该记录高亮，直到面板关闭或按 `Esc` 清除。时序图图例使用参与者、消息与帧语境，关系线钉住操作不适用。
+
+可直接查看原创的[英文 MapSpec](examples/demo/expected-mapspec.json)与[中文 MapSpec](examples/demo/expected-mapspec.zh-CN.json)。两者共享同一个小型示例源码目录、图谱结构、断言状态和证据数据；仅图谱读者可见文案与固定 UI 按语言本地化。英文 Demo 使用 `global`；中文 Demo 明确面向中国大陆访问者，使用 `china-friendly`。[英文时序 MapSpec](examples/demo/expected-mapspec.sequence.json)与[中文时序 MapSpec](examples/demo/expected-mapspec.sequence.zh-CN.json)把同一份示例源码按调用时序阅读，两种图型并排对照。可用以下命令重新生成已提交的 HTML：
 
 ~~~bash
 node skill/renderer/build-html.mjs \
@@ -81,6 +93,23 @@ node skill/renderer/build-html.mjs \
   --repo-root examples/demo/sample-repo \
   --cdn-profile china-friendly \
   --canonical-url https://yulaiz.github.io/interactive-code-map/zh-CN/
+~~~
+
+~~~bash
+node skill/renderer/build-html.mjs \
+  --in examples/demo/expected-mapspec.sequence.json \
+  --out examples/demo/expected-output.sequence.html \
+  --repo-root examples/demo/sample-repo \
+  --canonical-url https://yulaiz.github.io/interactive-code-map/en/sequence/
+~~~
+
+~~~bash
+node skill/renderer/build-html.mjs \
+  --in examples/demo/expected-mapspec.sequence.zh-CN.json \
+  --out examples/demo/expected-output.sequence.zh-CN.html \
+  --repo-root examples/demo/sample-repo \
+  --cdn-profile china-friendly \
+  --canonical-url https://yulaiz.github.io/interactive-code-map/zh-CN/sequence/
 ~~~
 
 ## 原则

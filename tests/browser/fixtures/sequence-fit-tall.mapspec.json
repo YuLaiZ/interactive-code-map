@@ -1,0 +1,1034 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "title": "Tall fit lower bound (fixture)",
+    "question": "Fixture: eight participants with sixty messages across thirty sequential opt frames, so the full-map fit scale is decided by the legend-cleared height and falls below the legacy zoom floor.",
+    "scope": "TEST-ONLY fixture marker: synthetic height fixture for the Fit lower-bound browser regression; NOT a real codebase. meta.languageProfile === 'fixture' marks it test-only — production build-html.mjs MUST reject it; tests admit it only under --allow-test-fixture for files under tests/**/fixtures/**. All evidence is inferred and intentionally references a path that does not exist.",
+    "languageProfile": "fixture",
+    "uiLocale": "en",
+    "diagramKind": "sequence",
+    "summary": "Sixty inferred messages in thirty sequential opt frames make the layout much taller than the viewport. The full-map fit scale is decided by the height after removing the top controls and bottom legend; the browser harness asserts that clicking Fit brings the whole layout inside that safe band with zero overlap against both overlays, and that the soft-limit notice is the only builder complaint."
+  },
+  "participants": [
+    {
+      "id": "t1",
+      "title": "Tall chain stage 1",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "t2",
+      "title": "Tall chain stage 2",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "t3",
+      "title": "Tall chain stage 3",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "t4",
+      "title": "Tall chain stage 4",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "t5",
+      "title": "Tall chain stage 5",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "t6",
+      "title": "Tall chain stage 6",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "t7",
+      "title": "Tall chain stage 7",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "t8",
+      "title": "Tall chain stage 8",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 1 guard holds",
+      "messages": [
+        {
+          "from": "t2",
+          "to": "t5",
+          "label": "Tall step 1",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t3",
+          "to": "t6",
+          "label": "Tall step 2",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 2 guard holds",
+      "messages": [
+        {
+          "from": "t4",
+          "to": "t7",
+          "label": "Tall step 3",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t5",
+          "to": "t8",
+          "label": "Tall step 4",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 3 guard holds",
+      "messages": [
+        {
+          "from": "t6",
+          "to": "t1",
+          "label": "Tall step 5",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t7",
+          "to": "t2",
+          "label": "Tall step 6",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 4 guard holds",
+      "messages": [
+        {
+          "from": "t8",
+          "to": "t3",
+          "label": "Tall step 7",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t1",
+          "to": "t4",
+          "label": "Tall step 8",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 5 guard holds",
+      "messages": [
+        {
+          "from": "t2",
+          "to": "t5",
+          "label": "Tall step 9",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t3",
+          "to": "t6",
+          "label": "Tall step 10",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 6 guard holds",
+      "messages": [
+        {
+          "from": "t4",
+          "to": "t7",
+          "label": "Tall step 11",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t5",
+          "to": "t8",
+          "label": "Tall step 12",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 7 guard holds",
+      "messages": [
+        {
+          "from": "t6",
+          "to": "t1",
+          "label": "Tall step 13",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t7",
+          "to": "t2",
+          "label": "Tall step 14",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 8 guard holds",
+      "messages": [
+        {
+          "from": "t8",
+          "to": "t3",
+          "label": "Tall step 15",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t1",
+          "to": "t4",
+          "label": "Tall step 16",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 9 guard holds",
+      "messages": [
+        {
+          "from": "t2",
+          "to": "t5",
+          "label": "Tall step 17",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t3",
+          "to": "t6",
+          "label": "Tall step 18",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 10 guard holds",
+      "messages": [
+        {
+          "from": "t4",
+          "to": "t7",
+          "label": "Tall step 19",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t5",
+          "to": "t8",
+          "label": "Tall step 20",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 11 guard holds",
+      "messages": [
+        {
+          "from": "t6",
+          "to": "t1",
+          "label": "Tall step 21",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t7",
+          "to": "t2",
+          "label": "Tall step 22",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 12 guard holds",
+      "messages": [
+        {
+          "from": "t8",
+          "to": "t3",
+          "label": "Tall step 23",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t1",
+          "to": "t4",
+          "label": "Tall step 24",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 13 guard holds",
+      "messages": [
+        {
+          "from": "t2",
+          "to": "t5",
+          "label": "Tall step 25",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t3",
+          "to": "t6",
+          "label": "Tall step 26",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 14 guard holds",
+      "messages": [
+        {
+          "from": "t4",
+          "to": "t7",
+          "label": "Tall step 27",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t5",
+          "to": "t8",
+          "label": "Tall step 28",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 15 guard holds",
+      "messages": [
+        {
+          "from": "t6",
+          "to": "t1",
+          "label": "Tall step 29",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t7",
+          "to": "t2",
+          "label": "Tall step 30",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 16 guard holds",
+      "messages": [
+        {
+          "from": "t8",
+          "to": "t3",
+          "label": "Tall step 31",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t1",
+          "to": "t4",
+          "label": "Tall step 32",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 17 guard holds",
+      "messages": [
+        {
+          "from": "t2",
+          "to": "t5",
+          "label": "Tall step 33",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t3",
+          "to": "t6",
+          "label": "Tall step 34",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 18 guard holds",
+      "messages": [
+        {
+          "from": "t4",
+          "to": "t7",
+          "label": "Tall step 35",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t5",
+          "to": "t8",
+          "label": "Tall step 36",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 19 guard holds",
+      "messages": [
+        {
+          "from": "t6",
+          "to": "t1",
+          "label": "Tall step 37",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t7",
+          "to": "t2",
+          "label": "Tall step 38",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 20 guard holds",
+      "messages": [
+        {
+          "from": "t8",
+          "to": "t3",
+          "label": "Tall step 39",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t1",
+          "to": "t4",
+          "label": "Tall step 40",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 21 guard holds",
+      "messages": [
+        {
+          "from": "t2",
+          "to": "t5",
+          "label": "Tall step 41",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t3",
+          "to": "t6",
+          "label": "Tall step 42",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 22 guard holds",
+      "messages": [
+        {
+          "from": "t4",
+          "to": "t7",
+          "label": "Tall step 43",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t5",
+          "to": "t8",
+          "label": "Tall step 44",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 23 guard holds",
+      "messages": [
+        {
+          "from": "t6",
+          "to": "t1",
+          "label": "Tall step 45",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t7",
+          "to": "t2",
+          "label": "Tall step 46",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 24 guard holds",
+      "messages": [
+        {
+          "from": "t8",
+          "to": "t3",
+          "label": "Tall step 47",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t1",
+          "to": "t4",
+          "label": "Tall step 48",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 25 guard holds",
+      "messages": [
+        {
+          "from": "t2",
+          "to": "t5",
+          "label": "Tall step 49",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t3",
+          "to": "t6",
+          "label": "Tall step 50",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 26 guard holds",
+      "messages": [
+        {
+          "from": "t4",
+          "to": "t7",
+          "label": "Tall step 51",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t5",
+          "to": "t8",
+          "label": "Tall step 52",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 27 guard holds",
+      "messages": [
+        {
+          "from": "t6",
+          "to": "t1",
+          "label": "Tall step 53",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t7",
+          "to": "t2",
+          "label": "Tall step 54",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 28 guard holds",
+      "messages": [
+        {
+          "from": "t8",
+          "to": "t3",
+          "label": "Tall step 55",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t1",
+          "to": "t4",
+          "label": "Tall step 56",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 29 guard holds",
+      "messages": [
+        {
+          "from": "t2",
+          "to": "t5",
+          "label": "Tall step 57",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t3",
+          "to": "t6",
+          "label": "Tall step 58",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Phase 30 guard holds",
+      "messages": [
+        {
+          "from": "t4",
+          "to": "t7",
+          "label": "Tall step 59",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        },
+        {
+          "from": "t5",
+          "to": "t8",
+          "label": "Tall step 60",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fixture/sequence/geometry.js",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -4,8 +4,41 @@
   "title": "MapSpec v1",
   "description": "Intermediate data model consumed by build-html.mjs and render.js. Authoritative definition; conflicts with prose resolved in favor of this schema.",
   "type": "object",
-  "required": ["schemaVersion", "meta", "nodes"],
+  "required": ["schemaVersion", "meta"],
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": ["meta"],
+        "properties": {
+          "meta": {
+            "type": "object",
+            "required": ["diagramKind"],
+            "properties": { "diagramKind": { "const": "sequence" } }
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "required": ["participants", "messages"],
+        "properties": {
+          "participants": {},
+          "messages": {},
+          "nodes": { "not": {} },
+          "edges": { "not": {} }
+        }
+      },
+      "else": {
+        "type": "object",
+        "required": ["nodes"],
+        "properties": {
+          "nodes": {},
+          "participants": { "not": {} },
+          "messages": { "not": {} }
+        }
+      }
+    }
+  ],
   "properties": {
     "schemaVersion": {
       "type": "integer",
@@ -19,12 +52,31 @@
       "type": "array",
       "minItems": 1,
       "maxItems": 100,
-      "description": "Hard cap 100; soft cap 60 (skill prompts user to narrow scope above soft cap).",
+      "description": "Flowchart only (diagramKind is flowchart or omitted). Hard cap 100; soft cap 60 (skill prompts user to narrow scope above soft cap).",
       "items": { "$ref": "#/$defs/node" }
     },
     "edges": {
       "type": "array",
+      "description": "Flowchart only. Forbidden when meta.diagramKind is sequence.",
       "items": { "$ref": "#/$defs/edge" }
+    },
+    "participants": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "description": "Sequence only. Declaration order is the lifeline order from left to right.",
+      "items": { "$ref": "#/$defs/participant" }
+    },
+    "messages": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Sequence only. Array order (depth-first after frame expansion) is the message order. Soft cap 30, hard cap 60 counted over the recursively expanded declared messages.",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/message" },
+          { "$ref": "#/$defs/frame" }
+        ]
+      }
     }
   },
   "$defs": {
@@ -53,6 +105,11 @@
           "description": "Optional fixed renderer UI locale. Use the conversation/output locale; default to English when omitted."
         },
         "summary": { "type": "string", "minLength": 1, "description": "Panorama summary. Non-empty (v3.2.14: aligned with validator and design intent)." },
+        "diagramKind": {
+          "type": "string",
+          "enum": ["flowchart", "sequence"],
+          "description": "Optional diagram family. flowchart is the default and keeps nodes/edges; sequence requires participants/messages and forbids nodes/edges. layoutDirection/layoutBands only apply to flowchart."
+        },
         "layoutDirection": {
           "type": "string",
           "enum": ["TD", "LR"],
@@ -120,6 +177,122 @@
           "type": "array",
           "minItems": 1,
           "items": { "$ref": "#/$defs/evidence" }
+        }
+      }
+    },
+    "participant": {
+      "type": "object",
+      "required": ["id", "title", "claimState", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+          "description": "Stable id shared by MapSpec, selection keys and detail views. The DSL generator deterministically maps it to an internal safe id (icm_pN); values that collide with sequence syntax keywords stay legal here."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[^\\n\\r]*$",
+          "description": "Single-line display name shown next to the lifeline. Length counts Unicode code points (hard cap 100; soft cap handled by the skill workflow). Newlines are rejected because a newline after `as` would inject a new DSL statement."
+        },
+        "claimState": { "$ref": "#/$defs/claimState" },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/evidence" }
+        },
+        "detail": { "$ref": "#/$defs/detail" }
+      }
+    },
+    "message": {
+      "type": "object",
+      "required": ["from", "to", "label", "claimState", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string", "minLength": 1, "description": "Declared participant id. Self-messages allow from == to." },
+        "to": { "type": "string", "minLength": 1, "description": "Declared participant id." },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[^\\n\\r]*$",
+          "description": "Single-line message text. Length counts Unicode code points (soft cap 40, hard cap 100); content beyond the soft cap moves into detail. Newlines are rejected because multi-line messages split the mapped text block and break the record mapping."
+        },
+        "arrowKind": {
+          "type": "string",
+          "enum": ["solid", "dashed"],
+          "description": "solid (default) is a call/initiation; dashed is a response/return."
+        },
+        "claimState": { "$ref": "#/$defs/claimState" },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/evidence" }
+        },
+        "detail": { "$ref": "#/$defs/detail" },
+        "activation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "activatesTo": { "type": "boolean", "description": "Activate the `to` participant with this message (Mermaid `+`). Forbidden inside frames and when deactivatesFrom is also true." },
+            "deactivatesFrom": { "type": "boolean", "description": "Deactivate the `from` participant with this message (Mermaid `-`). Forbidden inside frames and when activatesTo is also true." }
+          },
+          "description": "Optional inline activation change. Both booleans true is rejected; messages inside frames must not carry activation at all. Pairing is validated linearly over declaration order (outer activation may wrap whole frames)."
+        }
+      }
+    },
+    "frame": {
+      "type": "object",
+      "required": ["frame", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "frame": { "type": "boolean", "const": true, "description": "Discriminator separating frames from messages in the mixed messages array." },
+        "kind": { "type": "string", "enum": ["loop", "opt", "alt"] },
+        "label": {
+          "type": "string",
+          "maxLength": 100,
+          "pattern": "^[^&;#<>\"$:%\\n\\r]*$",
+          "description": "Frame condition for loop/opt, rendered as plain text. The character contract rejects & ; # < > \" $ : % and newlines: entities get shredded by narrow-frame wrapping, $ triggers math rendering, : is consumed by wrap:/nowrap: control prefixes, % is deleted by Mermaid directive preprocessing, and newlines inject DSL statements. alt never reads this field: its branch conditions come from the respective branches[].label."
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "$ref": "#/$defs/message" },
+              { "$ref": "#/$defs/frame" }
+            ]
+          }
+        },
+        "branches": {
+          "type": "array",
+          "minItems": 2,
+          "description": "alt only: mutually exclusive branches rendered with else.",
+          "items": { "$ref": "#/$defs/frameBranch" }
+        }
+      }
+    },
+    "frameBranch": {
+      "type": "object",
+      "required": ["label", "messages"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[^&;#<>\"$:%\\n\\r]*$",
+          "description": "Branch condition, subject to the same plain-text character contract as frame labels."
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "$ref": "#/$defs/message" },
+              { "$ref": "#/$defs/frame" }
+            ]
+          }
         }
       }
     },

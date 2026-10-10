@@ -1,0 +1,788 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "title": "Coffee counter order call sequence",
+    "question": "Who calls whom, in what order, from order submission through payment branches into asynchronous fulfillment and the ready-notification model — including the planned plain-text export?",
+    "scope": "The seven JavaScript modules under sample-repo read as one call sequence (four synchronous order modules plus the fulfillment queue, runner, and counter notifier); the counter caller itself lives outside the sample repository.",
+    "languageProfile": "javascript-esm",
+    "uiLocale": "en",
+    "diagramKind": "sequence",
+    "summary": "The sequence companion to the flowchart demo: the same sample repository read as a call order, in two phases. Synchronously, the counter caller (inferred — the caller lives outside the repository) hands the order to the order service, which normalizes items; the rest of the synchronous chain lives inside the reservation-succeeded condition because a failed reservation or a rejected charge propagates the error straight to the caller — within it, the charge splits into exclusive accepted/guard-error branches, and only an accepted charge reaches the receipt step and the asynchronous hand-off to the fulfillment queue (inferred wiring). Asynchronously, a runner claims the job only when one is queued, honors the three-attempt limit, calls the notifier to build the counter-display notification model, and marks the job fulfilled, reporting the outcome back. Every verified claim cites inspected lines of the sample repository; inferred claims mark wiring the repository implies but does not contain, and the planned plain-text export stays unconfirmed. Guard calls are drawn without activation bars because a thrown error ends the exchange on that path."
+  },
+  "participants": [
+    {
+      "id": "counter",
+      "title": "Counter caller",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 5,
+          "lineEnd": 5,
+          "symbol": "createOrder",
+          "note": "The exported orchestration entry implies an outside caller, but no caller code exists in the sample repository.",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "order",
+      "title": "Order service",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 5,
+          "lineEnd": 13,
+          "symbol": "createOrder",
+          "note": "The orchestrator resolves collaborators, normalizes items, reserves inventory, charges, and builds the receipt — with no try/catch, so a thrown guard error ends the exchange before the receipt step.",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "The orchestration function drives the synchronous exchange; a failed reservation or charge propagates uncaught, and only an accepted charge reaches the receipt step.",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "Execution sequence",
+            "subtitle": "createOrder :5-13",
+            "headers": [
+              "Step",
+              "Call",
+              "Why it matters"
+            ],
+            "rows": [
+              [
+                "1",
+                "Resolve collaborators",
+                "Injected dependencies override the imported defaults for tests"
+              ],
+              [
+                "2",
+                "normalizeItems",
+                "Guarantees a stable sku / quantity / unitCents shape"
+              ],
+              [
+                "3",
+                "reserveIngredients",
+                "Throws on unavailable items; otherwise returns totalCents"
+              ],
+              [
+                "4",
+                "chargeCard",
+                "Throws on guard failures; otherwise returns the accepted result"
+              ],
+              [
+                "5",
+                "makeReceipt",
+                "Reached only after both guards passed"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "inventory",
+      "title": "Inventory checker",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 7,
+          "lineEnd": 18,
+          "symbol": "reserveIngredients",
+          "note": "Decrements catalog availability and returns the reserved total in minor units; an unavailable item throws before any charge.",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "id": "payment",
+      "title": "Payment gateway",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 1,
+          "lineEnd": 12,
+          "symbol": "chargeCard",
+          "note": "Synchronous guards first, then an accepted result with a demo reference.",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "id": "receipt",
+      "title": "Receipt renderer",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "receipt-renderer.js",
+          "lineStart": 1,
+          "lineEnd": 9,
+          "symbol": "makeReceipt",
+          "note": "Assembles the final receipt model from order id, items, and payment result.",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "The receipt model is the single return value of the synchronous exchange.",
+        "segments": [
+          {
+            "kind": "schema",
+            "title": "Receipt shape",
+            "subtitle": "makeReceipt :1-9",
+            "headers": [
+              "Field",
+              "Source",
+              "Role"
+            ],
+            "rows": [
+              [
+                "orderId",
+                "input.orderId",
+                "Carries the caller's reference unchanged"
+              ],
+              [
+                "lines",
+                "items",
+                "One 'quantity × sku' line per normalized item"
+              ],
+              [
+                "paymentStatus",
+                "payment.status",
+                "Mirrors the charge outcome branch"
+              ],
+              [
+                "paymentReference",
+                "payment.reference",
+                "Demo reference returned by the gateway"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "runner",
+      "title": "Fulfillment runner",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "fulfillment-runner.js",
+          "lineStart": 1,
+          "lineEnd": 16,
+          "symbol": "runDueFulfillment",
+          "note": "Imports the queue and notifier, polls, returns null on an empty queue, claims, notifies, and marks the job fulfilled.",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "id": "queue",
+      "title": "Fulfillment queue",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "fulfillment-queue.js",
+          "lineStart": 4,
+          "lineEnd": 28,
+          "symbol": "enqueueFulfillment",
+          "note": "Holds queued jobs, enforces the three-attempt claim limit, and records the fulfilled state.",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "id": "notifier",
+      "title": "Counter notifier",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "barista-notifier.js",
+          "lineStart": 1,
+          "lineEnd": 12,
+          "symbol": "notifyCustomer",
+          "note": "Builds the counter-display notification model and offers a separate acknowledge helper that this call chain does not use. The sample contains no actual delivery or pickup confirmation.",
+          "state": "verified"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "from": "counter",
+      "to": "order",
+      "label": "Submit counter order",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 5,
+          "lineEnd": 5,
+          "symbol": "createOrder",
+          "note": "The entry point exists and is exported; which caller invokes it is inferred, since the sample repository has no caller code.",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "order",
+      "to": "order",
+      "label": "normalizeItems",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 9,
+          "lineEnd": 9,
+          "symbol": "createOrder",
+          "note": "The orchestrator normalizes items before any reservation.",
+          "state": "verified"
+        },
+        {
+          "path": "order-service.js",
+          "lineStart": 15,
+          "lineEnd": 21,
+          "symbol": "normalizeItems",
+          "note": "Skus become strings, quantities clamp to at least 1, unit amounts coerce to numbers.",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "order",
+      "to": "inventory",
+      "label": "reserveIngredients",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 10,
+          "lineEnd": 10,
+          "symbol": "createOrder",
+          "note": "Reservation runs on the normalized items.",
+          "state": "verified"
+        },
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 7,
+          "lineEnd": 18,
+          "symbol": "reserveIngredients",
+          "note": "A catalog hit with sufficient available quantity decrements availability; a hit with insufficient stock also throws before any charge.",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Reservation succeeded",
+      "messages": [
+        {
+          "from": "inventory",
+          "to": "order",
+          "label": "return totalCents",
+          "arrowKind": "dashed",
+          "claimState": "verified",
+          "evidence": [
+            {
+              "path": "inventory-checker.js",
+              "lineStart": 17,
+              "lineEnd": 17,
+              "symbol": "reserveIngredients",
+              "note": "The reservation object with the total in minor units is the return value; an unavailable item throws instead and the sequence ends at the caller.",
+              "state": "verified"
+            }
+          ]
+        },
+        {
+          "from": "order",
+          "to": "payment",
+          "label": "chargeCard with amountCents",
+          "claimState": "verified",
+          "evidence": [
+            {
+              "path": "order-service.js",
+              "lineStart": 11,
+              "lineEnd": 11,
+              "symbol": "createOrder",
+              "note": "The charge uses the caller's payment token and the reserved total.",
+              "state": "verified"
+            },
+            {
+              "path": "payment-gateway.js",
+              "lineStart": 1,
+              "lineEnd": 12,
+              "symbol": "chargeCard",
+              "note": "Guard checks run before the accepted result is built.",
+              "state": "verified"
+            }
+          ],
+          "detail": {
+            "summary": "The charge call is fully synchronous and its guards decide the exclusive alt branches.",
+            "segments": [
+              {
+                "kind": "value",
+                "title": "Guard contract",
+                "subtitle": "chargeCard :1-12",
+                "headers": [
+                  "Input",
+                  "Outcome",
+                  "Line"
+                ],
+                "rows": [
+                  [
+                    "Missing payment token",
+                    "Throws 'A payment token is required'",
+                    ":2-4"
+                  ],
+                  [
+                    "amountCents <= 0",
+                    "Throws 'The charge amount must be positive'",
+                    ":5-7"
+                  ],
+                  [
+                    "Both guards pass",
+                    "Returns status accepted with a demo reference",
+                    ":8-11"
+                  ]
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "frame": true,
+          "kind": "alt",
+          "branches": [
+            {
+              "label": "Payment guards passed",
+              "messages": [
+                {
+                  "from": "payment",
+                  "to": "order",
+                  "label": "accepted with reference",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "payment-gateway.js",
+                      "lineStart": 8,
+                      "lineEnd": 11,
+                      "symbol": "chargeCard",
+                      "note": "The accepted status and the demo reference flow into the receipt.",
+                      "state": "verified"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Token missing or amount invalid",
+              "messages": [
+                {
+                  "from": "payment",
+                  "to": "order",
+                  "label": "throw guard error",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "payment-gateway.js",
+                      "lineStart": 2,
+                      "lineEnd": 7,
+                      "symbol": "chargeCard",
+                      "note": "Both guards throw synchronously.",
+                      "state": "verified"
+                    }
+                  ]
+                },
+                {
+                  "from": "order",
+                  "to": "counter",
+                  "label": "error propagates, no receipt",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "order-service.js",
+                      "lineStart": 11,
+                      "lineEnd": 11,
+                      "symbol": "createOrder",
+                      "note": "createOrder has no try/catch, so the guard error propagates to the caller and the receipt step at :12 never runs.",
+                      "state": "verified"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "frame": true,
+          "kind": "opt",
+          "label": "Charge accepted",
+          "messages": [
+            {
+              "from": "order",
+              "to": "receipt",
+              "label": "makeReceipt",
+              "claimState": "verified",
+              "evidence": [
+                {
+                  "path": "order-service.js",
+                  "lineStart": 12,
+                  "lineEnd": 12,
+                  "symbol": "createOrder",
+                  "note": "The receipt builder runs only after both guards passed.",
+                  "state": "verified"
+                },
+                {
+                  "path": "receipt-renderer.js",
+                  "lineStart": 1,
+                  "lineEnd": 9,
+                  "symbol": "makeReceipt",
+                  "note": "Builds the receipt model in one synchronous pass.",
+                  "state": "verified"
+                }
+              ]
+            },
+            {
+              "from": "receipt",
+              "to": "order",
+              "label": "receipt with payment status",
+              "arrowKind": "dashed",
+              "claimState": "verified",
+              "evidence": [
+                {
+                  "path": "receipt-renderer.js",
+                  "lineStart": 3,
+                  "lineEnd": 8,
+                  "symbol": "makeReceipt",
+                  "note": "The returned model mirrors the payment status and reference.",
+                  "state": "verified"
+                }
+              ]
+            },
+            {
+              "from": "order",
+              "to": "counter",
+              "label": "return finalized receipt",
+              "arrowKind": "dashed",
+              "claimState": "verified",
+              "evidence": [
+                {
+                  "path": "order-service.js",
+                  "lineStart": 12,
+                  "lineEnd": 12,
+                  "symbol": "createOrder",
+                  "note": "The receipt is the return value; the synchronous exchange closes here.",
+                  "state": "verified"
+                }
+              ]
+            },
+            {
+              "from": "order",
+              "to": "queue",
+              "label": "enqueueFulfillment",
+              "claimState": "inferred",
+              "evidence": [
+                {
+                  "path": "fulfillment-queue.js",
+                  "lineStart": 4,
+                  "lineEnd": 8,
+                  "symbol": "enqueueFulfillment",
+                  "note": "The exported enqueue API exists; calling it from createOrder after the receipt is reasonable wiring the sample repository does not yet contain.",
+                  "state": "inferred"
+                }
+              ],
+              "detail": {
+                "summary": "Inferred wiring: the sample repository only contains the exported enqueue API — the order service never calls it. This edge shows the planned full chain.",
+                "segments": []
+              }
+            },
+            {
+              "from": "queue",
+              "to": "order",
+              "label": "job queued",
+              "arrowKind": "dashed",
+              "claimState": "verified",
+              "evidence": [
+                {
+                  "path": "fulfillment-queue.js",
+                  "lineStart": 7,
+                  "lineEnd": 7,
+                  "symbol": "enqueueFulfillment",
+                  "note": "The queued job object is the return value.",
+                  "state": "verified"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "counter",
+      "to": "runner",
+      "label": "runDueFulfillment",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fulfillment-runner.js",
+          "lineStart": 4,
+          "lineEnd": 16,
+          "symbol": "runDueFulfillment",
+          "note": "The exported runner entry exists; a counter-side trigger is reasonable wiring the sample repository does not contain.",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "runner",
+      "to": "queue",
+      "label": "pollNextJob",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "fulfillment-runner.js",
+          "lineStart": 5,
+          "lineEnd": 5,
+          "symbol": "runDueFulfillment",
+          "note": "The runner polls the queue before claiming.",
+          "state": "verified"
+        },
+        {
+          "path": "fulfillment-queue.js",
+          "lineStart": 10,
+          "lineEnd": 12,
+          "symbol": "pollNextJob",
+          "note": "Returns the first queued job or null.",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "queue",
+      "to": "runner",
+      "label": "queued job or null",
+      "arrowKind": "dashed",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "fulfillment-queue.js",
+          "lineStart": 11,
+          "lineEnd": 11,
+          "symbol": "pollNextJob",
+          "note": "The find result is the poll answer.",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Queued job exists",
+      "messages": [
+        {
+          "from": "runner",
+          "to": "queue",
+          "label": "claimJob",
+          "claimState": "verified",
+          "evidence": [
+            {
+              "path": "fulfillment-runner.js",
+              "lineStart": 6,
+              "lineEnd": 9,
+              "symbol": "runDueFulfillment",
+              "note": "A null poll result returns early at :6-8; only a queued job reaches the claim at :9.",
+              "state": "verified"
+            },
+            {
+              "path": "fulfillment-queue.js",
+              "lineStart": 14,
+              "lineEnd": 22,
+              "symbol": "claimJob",
+              "note": "Increments attempts; the three-attempt limit decides claimed versus blocked.",
+              "state": "verified"
+            }
+          ]
+        },
+        {
+          "frame": true,
+          "kind": "alt",
+          "branches": [
+            {
+              "label": "Within attempt limit",
+              "messages": [
+                {
+                  "from": "queue",
+                  "to": "runner",
+                  "label": "claimed",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "fulfillment-queue.js",
+                      "lineStart": 20,
+                      "lineEnd": 21,
+                      "symbol": "claimJob",
+                      "note": "Below the limit the job is marked claimed and the flag returns true.",
+                      "state": "verified"
+                    }
+                  ]
+                },
+                {
+                  "from": "runner",
+                  "to": "notifier",
+                  "label": "notifyCustomer",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "fulfillment-runner.js",
+                      "lineStart": 13,
+                      "lineEnd": 13,
+                      "symbol": "runDueFulfillment",
+                      "note": "After a successful claim, the runner calls notifyCustomer to build the customer notification model.",
+                      "state": "verified"
+                    },
+                    {
+                      "path": "barista-notifier.js",
+                      "lineStart": 1,
+                      "lineEnd": 8,
+                      "symbol": "notifyCustomer",
+                      "note": "Builds the counter-display notification for the order.",
+                      "state": "verified"
+                    }
+                  ]
+                },
+                {
+                  "from": "notifier",
+                  "to": "runner",
+                  "label": "notification for counter display",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "barista-notifier.js",
+                      "lineStart": 2,
+                      "lineEnd": 7,
+                      "symbol": "notifyCustomer",
+                      "note": "The notification model carries orderId, receipt reference, and the counter-display channel.",
+                      "state": "verified"
+                    }
+                  ]
+                },
+                {
+                  "from": "runner",
+                  "to": "queue",
+                  "label": "markFulfilled",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "fulfillment-runner.js",
+                      "lineStart": 14,
+                      "lineEnd": 14,
+                      "symbol": "runDueFulfillment",
+                      "note": "After building the notification model, the runner closes the job as fulfilled.",
+                      "state": "verified"
+                    },
+                    {
+                      "path": "fulfillment-queue.js",
+                      "lineStart": 24,
+                      "lineEnd": 28,
+                      "symbol": "markFulfilled",
+                      "note": "Records the fulfilled status and the receipt reference.",
+                      "state": "verified"
+                    }
+                  ]
+                },
+                {
+                  "from": "queue",
+                  "to": "runner",
+                  "label": "fulfilled job",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "fulfillment-queue.js",
+                      "lineStart": 25,
+                      "lineEnd": 27,
+                      "symbol": "markFulfilled",
+                      "note": "The updated job object is the return value.",
+                      "state": "verified"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Attempt limit exhausted",
+              "messages": [
+                {
+                  "from": "queue",
+                  "to": "runner",
+                  "label": "blocked after three attempts",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "fulfillment-queue.js",
+                      "lineStart": 16,
+                      "lineEnd": 19,
+                      "symbol": "claimJob",
+                      "note": "At the limit the job is marked blocked and the flag returns false.",
+                      "state": "verified"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "from": "runner",
+          "to": "counter",
+          "label": "fulfillment outcome",
+          "arrowKind": "dashed",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fulfillment-runner.js",
+              "lineStart": 15,
+              "lineEnd": 15,
+              "symbol": "runDueFulfillment",
+              "note": "The runner returns the outcome object; delivering it to the counter surface is reasonable wiring the sample repository does not contain.",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "Plain-text receipt export (planned)",
+      "messages": [
+        {
+          "from": "order",
+          "to": "counter",
+          "label": "send toPlainText export",
+          "claimState": "unconfirmed",
+          "evidence": [
+            {
+              "path": "receipt-renderer.js",
+              "lineStart": 11,
+              "lineEnd": 13,
+              "symbol": "toPlainText",
+              "note": "The export helper exists in the code, but the orchestrator never calls it; the planned wiring is unconfirmed.",
+              "state": "unconfirmed"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

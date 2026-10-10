@@ -27,10 +27,10 @@ Apply this contract to every multi-group MapSpec and to every visual revision. I
 
 ## Interaction and feedback
 
-- Hovering the path, its label, or its short leader must highlight the same relationship. Apply the flowing highlight to the path and the label, including internal relationships.
+- Flowchart only — hovering the path, its label, or its short leader must highlight the same relationship. Apply the flowing highlight to the path and the label, including internal relationships. (Sequence maps use the single-selection feedback defined in their section below.)
 - Preserve each detail panel's scroll position by node. Keep the close control fixed while the detail content scrolls.
 - Canvas dragging must not select graph text. Node selection should focus the selected node into the visible working area.
-- `Fit` and the initial fit must reserve space for the fixed guide. It has three vertically stacked, labelled sections: Reading guide, Evidence status, and Controls. Keep the content inside each section on one row; at a narrow viewport preserve the three sections and use horizontal overflow instead of wrapping section content or hiding a section.
+- Flowchart — `Fit` and the initial fit must reserve space for the fixed guide. It has three vertically stacked, labelled sections: Reading guide, Evidence status, and Controls. Keep the content inside each section on one row; at a narrow viewport preserve the three sections and use horizontal overflow instead of wrapping section content or hiding a section. Sequence — the initial read view aligns the content top to the controls-safe area at a readable scale (content may extend under the legend overlay by design), and after clicking `Fit` the whole layout must clear both the top controls and the bottom legend.
 
 ## Locale and fixed copy
 
@@ -38,9 +38,21 @@ Apply this contract to every multi-group MapSpec and to every visual revision. I
 - Localize all fixed UI together: document language, graph region name, dependency-failure page, reading guide, relationship keys, evidence-state labels, controls guide, detail controls, and empty-state copy. Keep business text in its supplied language.
 - Use the diamond icon as the condition marker. The adjacent legend text provides the localized semantic name; do not repeat a language-specific word inside every condition pill.
 
+## Sequence maps (meta.diagramKind = "sequence")
+
+Sequence maps follow the evidence and locale rules above, with their own readability baseline:
+
+- The mapping unit is the **message record**: the message text, its arrow line, and its sequence number highlight and open details together. Every participant and every message keeps a compact, legend-matched status dot; the arrow line keeps a muted tint of its claim state so a whole map can be scanned.
+- Frame conditions (`loop`/`opt` labels and `alt`/`else` conditions) render as plain text only: no `&` `;` `#` `<` `>` `"` `$` `:` `%` and no newlines. When a narrow frame wraps a long condition, the text may break across lines but no character may be lost and no entity fragment may appear.
+- Message labels stay single-line and inside the length caps; `autonumber` remains visible on every message; activation bars span exactly the declared activate/deactivate pairing and never change inside a frame.
+- Selection replaces pinning: clicking a message text, its line, its number, or a participant opens the matching evidence detail and keeps that one record highlighted until the panel closes or `Esc` is pressed.
+- The whole artifact must render with zero `foreignObject` elements. Legend copy speaks of participants, messages, and frames (localized with `meta.uiLocale`) instead of groups and relationship lines; the operation guide must not promise relationship pinning for a sequence map.
+
 ## Required visual acceptance
 
 Inspect an actual generated complex graph before declaring visual acceptance. Check at least:
+
+Flowchart:
 
 1. dense fan-in and fan-out ports, crossings, and route continuity;
 2. label ownership, collision avoidance, and leader length;
@@ -48,5 +60,15 @@ Inspect an actual generated complex graph before declaring visual acceptance. Ch
 4. hover feedback for condition, action, and internal relationships, plus click-to-pin on any relationship line (single pin at a time, hover behavior unchanged, cleared by clicking the line again, pressing `Esc`, or a blank-area click that is not a canvas drag);
 5. localized copy in the reading guide, evidence status, controls guide, and detail panel, plus a visible upper-left status dot on every node that matches the legend; and
 6. initial `Fit` and the Fit control with all three guide sections visible.
+
+Sequence:
+
+1. message-record selection highlight with the matching evidence mapping, and single selection only;
+2. `autonumber` completeness and message-line counts equal to the declared messages;
+3. frame conditions surviving narrow-frame wrapping with the original text intact;
+4. activation bars consistent with the declared pairing;
+5. zero `foreignObject` across the artifact;
+6. the initial read view at a readable scale with the call origin visible and clear of the top controls; and
+7. after clicking `Fit`, the whole layout clear of both the top controls and the bottom legend.
 
 When a visual defect is found, reproduce it with a focused browser regression before changing the renderer. Regenerate both the representative Demo and the requested business artifact from the same renderer, then run the full test suite.

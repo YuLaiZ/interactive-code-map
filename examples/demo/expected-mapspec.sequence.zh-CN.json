@@ -1,0 +1,788 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "title": "咖啡柜台订单调用时序",
+    "question": "从提交订单、支付分支到异步履约与出餐通知模型，谁在什么时刻调谁——包括规划中的纯文本导出？",
+    "scope": "sample-repo 中的七个 JavaScript 模块按一次调用时序阅读（四个同步订单模块，加上履约队列、履约执行器与出餐通知器）；柜台调用方本身在示例仓库之外。",
+    "languageProfile": "javascript-esm",
+    "uiLocale": "zh-CN",
+    "diagramKind": "sequence",
+    "summary": "流程图演示的时序版同伴：同一份示例源码按调用顺序阅读，分两个阶段。同步阶段，柜台调用方（推断——调用方在仓库外）把订单交给订单服务归一化商品；同步链的其余部分都在「库存预留成功」条件内，因为预留失败或支付被拒时错误会直接向调用方传播——条件内部，扣款分裂为受理/守卫拒绝互斥分支，只有受理通过的支付才到达制票步骤与向履约队列的异步交接（推断接线）。异步阶段，执行器仅在队列存在待处理任务时领取，遵守三次尝试上限，调用通知器构建柜台显示屏通知模型，并把任务标记为完成，最后回报处理结果。所有已验证结论都指向示例源码的具体行；推断标注仓库暗示但尚未包含的接线，规划中的纯文本导出保持待确认。守卫类调用未绘制激活条：抛出的错误会沿该路径直接终止交互。"
+  },
+  "participants": [
+    {
+      "id": "counter",
+      "title": "柜台调用方",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 5,
+          "lineEnd": 5,
+          "symbol": "createOrder",
+          "note": "导出的编排入口暗示存在外部调用方，但示例仓库中没有调用方代码。",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "order",
+      "title": "订单服务",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 5,
+          "lineEnd": 13,
+          "symbol": "createOrder",
+          "note": "编排函数解析协作方、归一化商品、保留库存、支付并构建收据——全程无 try/catch，守卫错误会在制票步骤之前终止交互。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "编排函数驱动同步交互；预留或支付失败时异常未捕获直接传播，只有受理通过的支付才到达制票步骤。",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "执行顺序",
+            "subtitle": "createOrder :5-13",
+            "headers": [
+              "步骤",
+              "调用",
+              "意义"
+            ],
+            "rows": [
+              [
+                "1",
+                "解析协作方",
+                "注入的依赖在测试中覆盖默认导入"
+              ],
+              [
+                "2",
+                "normalizeItems",
+                "保证稳定的 sku / quantity / unitCents 形态"
+              ],
+              [
+                "3",
+                "reserveIngredients",
+                "商品不可用时抛出；否则返回 totalCents"
+              ],
+              [
+                "4",
+                "chargeCard",
+                "守卫失败时抛出；否则返回受理结果"
+              ],
+              [
+                "5",
+                "makeReceipt",
+                "仅在两项守卫都通过后到达"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "inventory",
+      "title": "库存检查器",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 7,
+          "lineEnd": 18,
+          "symbol": "reserveIngredients",
+          "note": "扣减目录库存并返回以最小单位计的保留总额；商品不可用时在任何扣款之前抛出。",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "id": "payment",
+      "title": "支付网关",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "payment-gateway.js",
+          "lineStart": 1,
+          "lineEnd": 12,
+          "symbol": "chargeCard",
+          "note": "先做同步守卫检查，再返回带演示引用编号的受理结果。",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "id": "receipt",
+      "title": "收据渲染器",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "receipt-renderer.js",
+          "lineStart": 1,
+          "lineEnd": 9,
+          "symbol": "makeReceipt",
+          "note": "用订单号、商品与支付结果组装最终收据模型。",
+          "state": "verified"
+        }
+      ],
+      "detail": {
+        "summary": "收据模型是同步交互唯一的返回值。",
+        "segments": [
+          {
+            "kind": "schema",
+            "title": "收据结构",
+            "subtitle": "makeReceipt :1-9",
+            "headers": [
+              "字段",
+              "来源",
+              "作用"
+            ],
+            "rows": [
+              [
+                "orderId",
+                "input.orderId",
+                "原样携带调用方的订单引用"
+              ],
+              [
+                "lines",
+                "items",
+                "每个归一化商品一行「数量 × sku」"
+              ],
+              [
+                "paymentStatus",
+                "payment.status",
+                "镜像支付结果分支"
+              ],
+              [
+                "paymentReference",
+                "payment.reference",
+                "网关返回的演示引用编号"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "runner",
+      "title": "履约执行器",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "fulfillment-runner.js",
+          "lineStart": 1,
+          "lineEnd": 16,
+          "symbol": "runDueFulfillment",
+          "note": "导入队列与通知器，轮询，空队列时返回 null，领取、通知并把任务标记为完成。",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "id": "queue",
+      "title": "履约队列",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "fulfillment-queue.js",
+          "lineStart": 4,
+          "lineEnd": 28,
+          "symbol": "enqueueFulfillment",
+          "note": "持有排队任务，执行三次尝试的领取上限，并记录完成状态。",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "id": "notifier",
+      "title": "出餐通知器",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "barista-notifier.js",
+          "lineStart": 1,
+          "lineEnd": 12,
+          "symbol": "notifyCustomer",
+          "note": "构建柜台显示屏通知模型；另提供确认数据的辅助函数，本调用链未使用。示例不包含实际通知投递或取餐确认。",
+          "state": "verified"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "from": "counter",
+      "to": "order",
+      "label": "提交柜台订单",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 5,
+          "lineEnd": 5,
+          "symbol": "createOrder",
+          "note": "入口存在且已导出；由谁调用属于推断，示例仓库中没有调用方代码。",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "order",
+      "to": "order",
+      "label": "normalizeItems",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 9,
+          "lineEnd": 9,
+          "symbol": "createOrder",
+          "note": "编排函数在任何预留之前先归一化商品。",
+          "state": "verified"
+        },
+        {
+          "path": "order-service.js",
+          "lineStart": 15,
+          "lineEnd": 21,
+          "symbol": "normalizeItems",
+          "note": "sku 转字符串、数量下限为 1、单位金额转为数字。",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "order",
+      "to": "inventory",
+      "label": "reserveIngredients",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "order-service.js",
+          "lineStart": 10,
+          "lineEnd": 10,
+          "symbol": "createOrder",
+          "note": "在归一化后的商品上执行库存预留。",
+          "state": "verified"
+        },
+        {
+          "path": "inventory-checker.js",
+          "lineStart": 7,
+          "lineEnd": 18,
+          "symbol": "reserveIngredients",
+          "note": "目录项存在且可用数量足够时才扣减库存；目录命中但库存不足同样会在任何扣款之前抛出。",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "库存预留成功",
+      "messages": [
+        {
+          "from": "inventory",
+          "to": "order",
+          "label": "返回 totalCents",
+          "arrowKind": "dashed",
+          "claimState": "verified",
+          "evidence": [
+            {
+              "path": "inventory-checker.js",
+              "lineStart": 17,
+              "lineEnd": 17,
+              "symbol": "reserveIngredients",
+              "note": "带最小单位总额的预留对象即返回值；商品不可用时会改为抛出，时序在调用方处终止。",
+              "state": "verified"
+            }
+          ]
+        },
+        {
+          "from": "order",
+          "to": "payment",
+          "label": "chargeCard 携带 amountCents",
+          "claimState": "verified",
+          "evidence": [
+            {
+              "path": "order-service.js",
+              "lineStart": 11,
+              "lineEnd": 11,
+              "symbol": "createOrder",
+              "note": "扣款使用调用方的支付令牌与预留总额。",
+              "state": "verified"
+            },
+            {
+              "path": "payment-gateway.js",
+              "lineStart": 1,
+              "lineEnd": 12,
+              "symbol": "chargeCard",
+              "note": "守卫检查先于受理结果的构造。",
+              "state": "verified"
+            }
+          ],
+          "detail": {
+            "summary": "扣款调用完全同步，其守卫检查决定互斥的 alt 分支。",
+            "segments": [
+              {
+                "kind": "value",
+                "title": "守卫契约",
+                "subtitle": "chargeCard :1-12",
+                "headers": [
+                  "输入",
+                  "结果",
+                  "行"
+                ],
+                "rows": [
+                  [
+                    "缺少支付令牌",
+                    "抛出 'A payment token is required'",
+                    ":2-4"
+                  ],
+                  [
+                    "amountCents <= 0",
+                    "抛出 'The charge amount must be positive'",
+                    ":5-7"
+                  ],
+                  [
+                    "两项守卫通过",
+                    "返回 status accepted 与演示引用编号",
+                    ":8-11"
+                  ]
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "frame": true,
+          "kind": "alt",
+          "branches": [
+            {
+              "label": "支付校验通过",
+              "messages": [
+                {
+                  "from": "payment",
+                  "to": "order",
+                  "label": "受理并带引用编号",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "payment-gateway.js",
+                      "lineStart": 8,
+                      "lineEnd": 11,
+                      "symbol": "chargeCard",
+                      "note": "accepted 状态与演示引用编号随后进入收据。",
+                      "state": "verified"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "令牌缺失或金额非法",
+              "messages": [
+                {
+                  "from": "payment",
+                  "to": "order",
+                  "label": "抛出守卫错误",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "payment-gateway.js",
+                      "lineStart": 2,
+                      "lineEnd": 7,
+                      "symbol": "chargeCard",
+                      "note": "两项守卫均同步抛出。",
+                      "state": "verified"
+                    }
+                  ]
+                },
+                {
+                  "from": "order",
+                  "to": "counter",
+                  "label": "错误传播，无收据",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "order-service.js",
+                      "lineStart": 11,
+                      "lineEnd": 11,
+                      "symbol": "createOrder",
+                      "note": "createOrder 没有 try/catch，守卫错误向调用方传播，:12 的制票步骤不会执行。",
+                      "state": "verified"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "frame": true,
+          "kind": "opt",
+          "label": "支付受理通过",
+          "messages": [
+            {
+              "from": "order",
+              "to": "receipt",
+              "label": "makeReceipt",
+              "claimState": "verified",
+              "evidence": [
+                {
+                  "path": "order-service.js",
+                  "lineStart": 12,
+                  "lineEnd": 12,
+                  "symbol": "createOrder",
+                  "note": "只有两项守卫都通过后才会执行制票。",
+                  "state": "verified"
+                },
+                {
+                  "path": "receipt-renderer.js",
+                  "lineStart": 1,
+                  "lineEnd": 9,
+                  "symbol": "makeReceipt",
+                  "note": "单次同步遍历构建收据模型。",
+                  "state": "verified"
+                }
+              ]
+            },
+            {
+              "from": "receipt",
+              "to": "order",
+              "label": "返回带支付状态的收据",
+              "arrowKind": "dashed",
+              "claimState": "verified",
+              "evidence": [
+                {
+                  "path": "receipt-renderer.js",
+                  "lineStart": 3,
+                  "lineEnd": 8,
+                  "symbol": "makeReceipt",
+                  "note": "返回的模型镜像支付状态与引用编号。",
+                  "state": "verified"
+                }
+              ]
+            },
+            {
+              "from": "order",
+              "to": "counter",
+              "label": "返回最终收据",
+              "arrowKind": "dashed",
+              "claimState": "verified",
+              "evidence": [
+                {
+                  "path": "order-service.js",
+                  "lineStart": 12,
+                  "lineEnd": 12,
+                  "symbol": "createOrder",
+                  "note": "收据即返回值，同步交互在此闭合。",
+                  "state": "verified"
+                }
+              ]
+            },
+            {
+              "from": "order",
+              "to": "queue",
+              "label": "enqueueFulfillment",
+              "claimState": "inferred",
+              "evidence": [
+                {
+                  "path": "fulfillment-queue.js",
+                  "lineStart": 4,
+                  "lineEnd": 8,
+                  "symbol": "enqueueFulfillment",
+                  "note": "导出的入队 API 已存在；由 createOrder 在收据后调用属合理接线，示例仓库尚未包含。",
+                  "state": "inferred"
+                }
+              ],
+              "detail": {
+                "summary": "推断接线：示例仓库只有导出的入队 API，订单服务并未调用它；此处展示的是规划中的完整链路。",
+                "segments": []
+              }
+            },
+            {
+              "from": "queue",
+              "to": "order",
+              "label": "任务已入队",
+              "arrowKind": "dashed",
+              "claimState": "verified",
+              "evidence": [
+                {
+                  "path": "fulfillment-queue.js",
+                  "lineStart": 7,
+                  "lineEnd": 7,
+                  "symbol": "enqueueFulfillment",
+                  "note": "入队的任务对象即返回值。",
+                  "state": "verified"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "counter",
+      "to": "runner",
+      "label": "runDueFulfillment",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fulfillment-runner.js",
+          "lineStart": 4,
+          "lineEnd": 16,
+          "symbol": "runDueFulfillment",
+          "note": "导出的执行器入口已存在；柜台侧触发属合理接线，示例仓库不含。",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "runner",
+      "to": "queue",
+      "label": "pollNextJob",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "fulfillment-runner.js",
+          "lineStart": 5,
+          "lineEnd": 5,
+          "symbol": "runDueFulfillment",
+          "note": "执行器在领取前先轮询队列。",
+          "state": "verified"
+        },
+        {
+          "path": "fulfillment-queue.js",
+          "lineStart": 10,
+          "lineEnd": 12,
+          "symbol": "pollNextJob",
+          "note": "返回第一个排队任务或 null。",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "from": "queue",
+      "to": "runner",
+      "label": "排队任务或 null",
+      "arrowKind": "dashed",
+      "claimState": "verified",
+      "evidence": [
+        {
+          "path": "fulfillment-queue.js",
+          "lineStart": 11,
+          "lineEnd": 11,
+          "symbol": "pollNextJob",
+          "note": "find 的结果即轮询应答。",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "存在待处理任务",
+      "messages": [
+        {
+          "from": "runner",
+          "to": "queue",
+          "label": "claimJob",
+          "claimState": "verified",
+          "evidence": [
+            {
+              "path": "fulfillment-runner.js",
+              "lineStart": 6,
+              "lineEnd": 9,
+              "symbol": "runDueFulfillment",
+              "note": "轮询为 null 时在 :6-8 提前返回；只有排队任务才会到达 :9 的领取。",
+              "state": "verified"
+            },
+            {
+              "path": "fulfillment-queue.js",
+              "lineStart": 14,
+              "lineEnd": 22,
+              "symbol": "claimJob",
+              "note": "递增尝试次数；三次尝试上限决定受理或阻塞。",
+              "state": "verified"
+            }
+          ]
+        },
+        {
+          "frame": true,
+          "kind": "alt",
+          "branches": [
+            {
+              "label": "未达尝试上限",
+              "messages": [
+                {
+                  "from": "queue",
+                  "to": "runner",
+                  "label": "受理领取",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "fulfillment-queue.js",
+                      "lineStart": 20,
+                      "lineEnd": 21,
+                      "symbol": "claimJob",
+                      "note": "低于上限时任务标记为已领取，标志返回 true。",
+                      "state": "verified"
+                    }
+                  ]
+                },
+                {
+                  "from": "runner",
+                  "to": "notifier",
+                  "label": "notifyCustomer",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "fulfillment-runner.js",
+                      "lineStart": 13,
+                      "lineEnd": 13,
+                      "symbol": "runDueFulfillment",
+                      "note": "领取成功后，执行器调用 notifyCustomer 构建顾客通知模型。",
+                      "state": "verified"
+                    },
+                    {
+                      "path": "barista-notifier.js",
+                      "lineStart": 1,
+                      "lineEnd": 8,
+                      "symbol": "notifyCustomer",
+                      "note": "为该订单构建柜台显示屏通知。",
+                      "state": "verified"
+                    }
+                  ]
+                },
+                {
+                  "from": "notifier",
+                  "to": "runner",
+                  "label": "柜台屏通知模型",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "barista-notifier.js",
+                      "lineStart": 2,
+                      "lineEnd": 7,
+                      "symbol": "notifyCustomer",
+                      "note": "通知模型携带订单号、收据引用与 counter-display 渠道。",
+                      "state": "verified"
+                    }
+                  ]
+                },
+                {
+                  "from": "runner",
+                  "to": "queue",
+                  "label": "markFulfilled",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "fulfillment-runner.js",
+                      "lineStart": 14,
+                      "lineEnd": 14,
+                      "symbol": "runDueFulfillment",
+                      "note": "构建通知模型之后，执行器把任务闭合为已完成。",
+                      "state": "verified"
+                    },
+                    {
+                      "path": "fulfillment-queue.js",
+                      "lineStart": 24,
+                      "lineEnd": 28,
+                      "symbol": "markFulfilled",
+                      "note": "记录完成状态与收据引用。",
+                      "state": "verified"
+                    }
+                  ]
+                },
+                {
+                  "from": "queue",
+                  "to": "runner",
+                  "label": "已完成任务",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "fulfillment-queue.js",
+                      "lineStart": 25,
+                      "lineEnd": 27,
+                      "symbol": "markFulfilled",
+                      "note": "更新后的任务对象即返回值。",
+                      "state": "verified"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "尝试已达上限",
+              "messages": [
+                {
+                  "from": "queue",
+                  "to": "runner",
+                  "label": "三次尝试后阻塞",
+                  "arrowKind": "dashed",
+                  "claimState": "verified",
+                  "evidence": [
+                    {
+                      "path": "fulfillment-queue.js",
+                      "lineStart": 16,
+                      "lineEnd": 19,
+                      "symbol": "claimJob",
+                      "note": "达到上限时任务标记为阻塞，标志返回 false。",
+                      "state": "verified"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "from": "runner",
+          "to": "counter",
+          "label": "履约处理结果",
+          "arrowKind": "dashed",
+          "claimState": "inferred",
+          "evidence": [
+            {
+              "path": "fulfillment-runner.js",
+              "lineStart": 15,
+              "lineEnd": 15,
+              "symbol": "runDueFulfillment",
+              "note": "执行器返回结果对象；把它投递到柜台界面属合理接线，示例仓库不含。",
+              "state": "inferred"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "opt",
+      "label": "纯文本导出（规划）",
+      "messages": [
+        {
+          "from": "order",
+          "to": "counter",
+          "label": "发送 toPlainText 导出",
+          "claimState": "unconfirmed",
+          "evidence": [
+            {
+              "path": "receipt-renderer.js",
+              "lineStart": 11,
+              "lineEnd": 13,
+              "symbol": "toPlainText",
+              "note": "导出辅助函数已在代码中存在，但编排从未调用它；规划中的接线保持待确认。",
+              "state": "unconfirmed"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

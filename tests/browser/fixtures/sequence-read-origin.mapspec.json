@@ -1,0 +1,508 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "title": "Read-view horizontal origin (fixture)",
+    "question": "Fixture: a twelve-participant wide sequence at the participant cap, so the initial read view must start from the left content edge instead of centering a canvas-overflowing layout.",
+    "scope": "TEST-ONLY fixture marker: synthetic width fixture for the read-view horizontal-origin browser regression; NOT a real codebase. meta.languageProfile === 'fixture' marks it test-only — production build-html.mjs MUST reject it; tests admit it only under --allow-test-fixture for files under tests/**/fixtures/**. All evidence is inferred and intentionally references a path that does not exist.",
+    "languageProfile": "fixture",
+    "uiLocale": "en",
+    "diagramKind": "sequence",
+    "summary": "Thirty inferred messages ring across the full twelve-participant cap, producing a layout wider than the viewport even at the 0.75 readable scale. The browser harness asserts that the initial read view starts at the left content edge — the first participant and the first message stay inside the canvas — while remaining readable and clear of the top controls."
+  },
+  "participants": [
+    {
+      "id": "w1",
+      "title": "Worker 1",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "w2",
+      "title": "Worker 2",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "w3",
+      "title": "Worker 3",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "w4",
+      "title": "Worker 4",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "w5",
+      "title": "Worker 5",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "w6",
+      "title": "Worker 6",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "w7",
+      "title": "Worker 7",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "w8",
+      "title": "Worker 8",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "w9",
+      "title": "Worker 9",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "w10",
+      "title": "Worker 10",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "w11",
+      "title": "Worker 11",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "id": "w12",
+      "title": "Worker 12",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "from": "w1",
+      "to": "w2",
+      "label": "Wide step 1",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w2",
+      "to": "w3",
+      "label": "Wide step 2",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w3",
+      "to": "w4",
+      "label": "Wide step 3",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w4",
+      "to": "w5",
+      "label": "Wide step 4",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w5",
+      "to": "w6",
+      "label": "Wide step 5",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w6",
+      "to": "w7",
+      "label": "Wide step 6",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w7",
+      "to": "w8",
+      "label": "Wide step 7",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w8",
+      "to": "w9",
+      "label": "Wide step 8",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w9",
+      "to": "w10",
+      "label": "Wide step 9",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w10",
+      "to": "w11",
+      "label": "Wide step 10",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w11",
+      "to": "w12",
+      "label": "Wide step 11",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w12",
+      "to": "w1",
+      "label": "Wide step 12",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w1",
+      "to": "w2",
+      "label": "Wide step 13",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w2",
+      "to": "w3",
+      "label": "Wide step 14",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w3",
+      "to": "w4",
+      "label": "Wide step 15",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w4",
+      "to": "w5",
+      "label": "Wide step 16",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w5",
+      "to": "w6",
+      "label": "Wide step 17",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w6",
+      "to": "w7",
+      "label": "Wide step 18",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w7",
+      "to": "w8",
+      "label": "Wide step 19",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w8",
+      "to": "w9",
+      "label": "Wide step 20",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w9",
+      "to": "w10",
+      "label": "Wide step 21",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w10",
+      "to": "w11",
+      "label": "Wide step 22",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w11",
+      "to": "w12",
+      "label": "Wide step 23",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w12",
+      "to": "w1",
+      "label": "Wide step 24",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w1",
+      "to": "w2",
+      "label": "Wide step 25",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w2",
+      "to": "w3",
+      "label": "Wide step 26",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w3",
+      "to": "w4",
+      "label": "Wide step 27",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w4",
+      "to": "w5",
+      "label": "Wide step 28",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w5",
+      "to": "w6",
+      "label": "Wide step 29",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    },
+    {
+      "from": "w6",
+      "to": "w7",
+      "label": "Wide step 30",
+      "claimState": "inferred",
+      "evidence": [
+        {
+          "path": "fixture/sequence/geometry.js",
+          "state": "inferred"
+        }
+      ]
+    }
+  ]
+}

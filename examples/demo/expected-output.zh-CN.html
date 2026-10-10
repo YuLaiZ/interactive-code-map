@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>咖啡柜台订单流程</title>
-  <meta name="description" content="本示例刻意覆盖十个分组和十四个节点。订单入口分流到商品目录、库存、支付令牌、支付金额和横切审计；库存保留与金额计算再和支付校验汇合至授权步骤。它覆盖分支、汇合、跨分组连线，以及推断和待确认路径。所有已验证结论都指向示例源码的具体行。">
+  <meta name="description" content="本示例刻意覆盖十个分组和十四个节点。订单入口分流到商品目录、库存、支付令牌、支付金额和横切审计；预留循环逐项校验目录、扣减库存并累计目录价格总额，令牌、金额与预留持有检查再汇合至授权步骤。它覆盖分支、汇合、跨分组连线，以及推断和待确认路径。所有已验证结论都指向示例源码的具体行。">
   <meta property="og:type" content="website">
   <meta property="og:title" content="咖啡柜台订单流程">
-  <meta property="og:description" content="本示例刻意覆盖十个分组和十四个节点。订单入口分流到商品目录、库存、支付令牌、支付金额和横切审计；库存保留与金额计算再和支付校验汇合至授权步骤。它覆盖分支、汇合、跨分组连线，以及推断和待确认路径。所有已验证结论都指向示例源码的具体行。">
+  <meta property="og:description" content="本示例刻意覆盖十个分组和十四个节点。订单入口分流到商品目录、库存、支付令牌、支付金额和横切审计；预留循环逐项校验目录、扣减库存并累计目录价格总额，令牌、金额与预留持有检查再汇合至授权步骤。它覆盖分支、汇合、跨分组连线，以及推断和待确认路径。所有已验证结论都指向示例源码的具体行。">
   <meta name="twitter:card" content="summary">
   <link rel="canonical" href="https://yulaiz.github.io/interactive-code-map/zh-CN/">
   <meta property="og:url" content="https://yulaiz.github.io/interactive-code-map/zh-CN/">
@@ -459,7 +459,7 @@ button:focus-visible,
   white-space: inherit !important;
 }
 
-/* 条件使用明确的文字前缀，而不是箭头或图形符号。这样它不会与分组页签的 ▦ 图标
+/* 条件使用菱形图标加描边胶囊，而不是文字前缀。这样它不会与分组页签的 ▦ 图标
  * 混淆，也不会被误读为一个待执行节点；只有 MapSpec labelKind=condition 才采用此样式。 */
 #graph-canvas svg .edgeLabel.icm-condition-edge-label foreignObject > div {
   display: inline-flex !important;
@@ -1077,6 +1077,149 @@ g.node.icm-node-state-unconfirmed rect {
   }
 }
 
+/* ===================== sequence 时序图(diagramKind=sequence) =====================
+ * 与 flowchart 的节点/关系线样式无交集。默认 Mermaid 主题假定浅色背景,以下
+ * 规则把参与者、生命线、消息、帧与激活条统一映射到本页深色色板,并为消息
+ * 记录(文本/线/序号)与参与者提供悬停、选中(替代钉住)与焦点视觉。 */
+
+#graph-canvas svg rect.actor {
+  fill: var(--icm-node-surface) !important;
+  stroke: var(--icm-node-border) !important;
+  stroke-width: 1.75px !important;
+  transition: stroke 140ms ease, stroke-width 140ms ease, filter 140ms ease;
+}
+
+#graph-canvas svg text.actor,
+#graph-canvas svg text.actor tspan {
+  fill: var(--icm-text) !important;
+  font-weight: 650 !important;
+}
+
+#graph-canvas svg .actor-line {
+  stroke: var(--icm-graph-line) !important;
+  stroke-width: 1.4px !important;
+  stroke-dasharray: 4 4;
+}
+
+#graph-canvas svg [class*='activation'] {
+  fill: rgb(113 173 255 / 16%) !important;
+  stroke: var(--icm-accent) !important;
+  stroke-width: 1px !important;
+}
+
+#graph-canvas svg .loopLine {
+  stroke: #476f96 !important;
+  stroke-width: 1.2px !important;
+}
+
+#graph-canvas svg .labelBox {
+  fill: var(--icm-edge-label-surface) !important;
+  stroke: var(--icm-cluster-border) !important;
+  stroke-width: 1px !important;
+}
+
+#graph-canvas svg .labelText,
+#graph-canvas svg .labelText tspan {
+  fill: var(--icm-accent) !important;
+  font-weight: 700 !important;
+}
+
+#graph-canvas svg .loopText,
+#graph-canvas svg .loopText tspan,
+#graph-canvas svg .sectionTitle,
+#graph-canvas svg .sectionTitle tspan {
+  fill: var(--icm-text-muted) !important;
+  font-weight: 600 !important;
+}
+
+/* 消息线与文本的三态:状态点是强语义,线按证据状态弱着色以便整图扫描。 */
+#graph-canvas svg .messageLine0,
+#graph-canvas svg .messageLine1 {
+  stroke: var(--icm-graph-line) !important;
+  stroke-width: 1.75px !important;
+  transition: stroke 140ms ease, stroke-width 140ms ease, filter 140ms ease;
+}
+
+#graph-canvas svg .messageLine0.icm-state-verified,
+#graph-canvas svg .messageLine1.icm-state-verified {
+  stroke: var(--icm-verified) !important;
+}
+
+#graph-canvas svg .messageLine0.icm-state-inferred,
+#graph-canvas svg .messageLine1.icm-state-inferred {
+  stroke: var(--icm-inferred) !important;
+}
+
+#graph-canvas svg .messageLine0.icm-state-unconfirmed,
+#graph-canvas svg .messageLine1.icm-state-unconfirmed {
+  stroke: var(--icm-unconfirmed) !important;
+}
+
+#graph-canvas svg text.messageText,
+#graph-canvas svg text.messageText tspan {
+  fill: var(--icm-text) !important;
+  font-weight: 600 !important;
+}
+
+#graph-canvas svg text.sequenceNumber,
+#graph-canvas svg text.sequenceNumber tspan {
+  fill: var(--icm-text-muted) !important;
+  font-weight: 700 !important;
+}
+
+/* 状态点:与 flowchart 节点状态点同一套三态色;深色描边保证在浅色激活条上可辨。 */
+#graph-canvas svg .icm-sequence-state-dot {
+  stroke: #071321;
+  stroke-width: 2px;
+}
+
+#graph-canvas svg .icm-sequence-state-dot.icm-node-evidence-verified { fill: var(--icm-verified); }
+#graph-canvas svg .icm-sequence-state-dot.icm-node-evidence-inferred { fill: var(--icm-inferred); }
+#graph-canvas svg .icm-sequence-state-dot.icm-node-evidence-unconfirmed { fill: var(--icm-unconfirmed); }
+
+/* 可交互元素(消息文本/线/序号、参与者):指针与焦点视觉与 flowchart 一致。 */
+#graph-canvas svg .icm-sequence-interactive {
+  cursor: pointer;
+}
+
+#graph-canvas svg .icm-sequence-interactive:focus {
+  outline: none;
+}
+
+#graph-canvas svg g[data-icm-participant-id]:hover rect.actor,
+#graph-canvas svg g[data-icm-participant-id].icm-sequence-selected rect.actor,
+#graph-canvas svg g[data-icm-participant-id]:focus-visible rect.actor {
+  stroke: #f0fbff !important;
+  stroke-width: 3.5px !important;
+  filter:
+    drop-shadow(0 0 2px rgb(255 255 255 / 92%))
+    drop-shadow(0 0 12px rgb(111 201 255 / 92%));
+}
+
+#graph-canvas svg text.messageText:hover,
+#graph-canvas svg .icm-sequence-selected text.messageText,
+#graph-canvas svg text.messageText.icm-sequence-selected,
+#graph-canvas svg text.messageText:focus-visible {
+  fill: #f0fbff !important;
+}
+
+#graph-canvas svg .messageLine0:hover,
+#graph-canvas svg .messageLine1:hover,
+#graph-canvas svg .messageLine0.icm-sequence-selected,
+#graph-canvas svg .messageLine1.icm-sequence-selected,
+#graph-canvas svg .messageLine0:focus-visible,
+#graph-canvas svg .messageLine1:focus-visible {
+  stroke: #f0fbff !important;
+  stroke-width: 3.35px !important;
+  filter: drop-shadow(0 0 4px rgb(111 201 255 / 86%));
+}
+
+#graph-canvas svg text.sequenceNumber.icm-sequence-selected,
+#graph-canvas svg text.sequenceNumber:hover,
+#graph-canvas svg text.sequenceNumber:focus-visible {
+  fill: #f0fbff !important;
+}
+
   </style>
 </head>
 <body>
@@ -1092,7 +1235,7 @@ g.node.icm-node-state-unconfirmed rect {
     </section>
   </div>
   <script>
-    window.__ICM_MAPSPEC__ = {"schemaVersion":1,"meta":{"title":"咖啡柜台订单流程","question":"已提交的柜台订单如何从协作方准备开始，经过校验和支付，到达收据交付与后续操作？","scope":"sample-repo 中的四个小型 JavaScript 模块。","languageProfile":"javascript-esm","uiLocale":"zh-CN","layoutDirection":"TD","summary":"本示例刻意覆盖十个分组和十四个节点。订单入口分流到商品目录、库存、支付令牌、支付金额和横切审计；库存保留与金额计算再和支付校验汇合至授权步骤。它覆盖分支、汇合、跨分组连线，以及推断和待确认路径。所有已验证结论都指向示例源码的具体行。"},"nodes":[{"id":"n1","title":"创建订单","category":"编排","subgraph":"订单接入","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":5,"lineEnd":5,"symbol":"createOrder","note":"公开编排入口接收输入和可选的依赖覆盖。","state":"verified"},{"path":"order-service.js","lineStart":6,"lineEnd":8,"symbol":"createOrder","note":"存在注入协作方时使用注入实现，否则回退到导入的默认实现。","state":"verified"},{"path":"order-service.js","lineStart":9,"lineEnd":11,"symbol":"createOrder","note":"库存预留前会规范化商品，预留总额会成为支付金额。","state":"verified"},{"path":"order-service.js","lineStart":12,"lineEnd":12,"symbol":"createOrder","note":"收据构建器接收订单 ID、规范化商品和已接受的支付对象。","state":"verified"}],"detail":{"summary":"createOrder 编排完整订单路径，并将支付结果交给收据生成器。","segments":[{"kind":"value","title":"执行顺序","subtitle":"order-service.js :5-12","headers":["顺序","操作","作用"],"rows":[["1","解析协作方","允许测试覆盖默认实现"],["2","规范化商品","为后续服务提供稳定结构"],["3","保留库存并支付","将保留金额传给支付接口"],["4","生成收据","返回调用方可用的结果"]]}]}},{"id":"n2","title":"解析协作方","category":"依赖准备","subgraph":"订单接入","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":6,"lineEnd":8,"symbol":"createOrder","note":"提供时使用注入协作方，否则选择导入的默认实现。","state":"verified"}],"detail":{"summary":"库存、支付和收据三个协作方都可被测试依赖替换。","segments":[{"kind":"schema","title":"回退规则","headers":["操作","优先实现","默认实现"],"rows":[["保留库存","dependencies.reserveIngredients","reserveIngredients"],["授权支付","dependencies.chargeCard","chargeCard"],["生成收据","dependencies.makeReceipt","makeReceipt"]]}]}},{"id":"n3","title":"规范化商品","category":"数据转换","subgraph":"订单接入","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":9,"lineEnd":9,"symbol":"createOrder","note":"查询库存前先规范化输入。","state":"verified"},{"path":"order-service.js","lineStart":15,"lineEnd":20,"symbol":"normalizeItems","note":"将 sku、quantity 和 unitCents 转换为一致的记录形态。","state":"verified"}],"detail":{"summary":"输入商品在进入库存和收据处理前被规范化。","segments":[{"kind":"value","title":"商品字段处理","headers":["字段","处理","结果"],"rows":[["sku","String(item.sku)","稳定的商品标识"],["quantity","至少为 1","避免零或无效数量"],["unitCents","转换为数字","保留在规范化对象中"]]}]}},{"id":"n4","title":"读取商品目录","category":"库存查询","subgraph":"商品目录","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":9,"lineEnd":10,"symbol":"reserveIngredients","note":"为每个规范化 sku 获取商品目录项。","state":"verified"}],"detail":{"summary":"内存目录是库存校验和总额计算的共同数据来源。","segments":[{"kind":"value","title":"目录内容","headers":["SKU","可用数量","单价（分）"],"rows":[["espresso","12","280"],["oat-milk","8","90"],["croissant","5","350"]]}]}},{"id":"n5","title":"校验库存数量","category":"库存校验","subgraph":"可用性策略","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":11,"lineEnd":13,"symbol":"reserveIngredients","note":"目录项缺失或可用数量不足时拒绝。","state":"verified"}],"detail":{"summary":"每个商品必须存在且库存足够，流程才会继续。","segments":[{"kind":"value","title":"失败条件","headers":["条件","行为"],"rows":[["目录中不存在 SKU","抛出不可用商品错误"],["可用数量小于请求数量","抛出不可用商品错误"]]}]}},{"id":"n6","title":"扣减库存","category":"库存变更","subgraph":"库存预留","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":14,"lineEnd":14,"symbol":"reserveIngredients","note":"校验通过后才减少可用数量。","state":"verified"}],"detail":{"summary":"校验完成后，函数立即在目录对象上扣减库存。","segments":[{"kind":"schema","title":"保留结果","headers":["字段","含义"],"rows":[["reserved","库存已保留的布尔值"],["totalCents","用于支付的累计金额"]]}]}},{"id":"n7","title":"计算订单金额","category":"金额计算","subgraph":"金额计算","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":15,"lineEnd":17,"symbol":"reserveIngredients","note":"累加各行金额，并随预留结果返回 totalCents。","state":"verified"}],"detail":{"summary":"订单金额在库存保留循环中累计计算，而不是使用输入中的 unitCents。","segments":[{"kind":"value","title":"计算规则","headers":["表达式","数据来源","用途"],"rows":[["quantity × entry.unitCents","商品目录","累计 totalCents"],["totalCents","保留结果","支付金额"]]}]}},{"id":"n8","title":"支付接口","category":"支付校验","subgraph":"支付校验","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":1,"lineEnd":4,"symbol":"chargeCard","note":"未提供支付令牌时拒绝支付。","state":"verified"}],"detail":{"summary":"支付协作方负责在令牌和金额有效时创建授权结果。","segments":[{"kind":"schema","title":"接口输入","headers":["参数","用途"],"rows":[["paymentToken","支付令牌校验"],["amountCents","正数金额校验与引用号生成"]]}]}},{"id":"n9","title":"传递支付金额","category":"支付校验","subgraph":"支付校验","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":5,"lineEnd":7,"symbol":"chargeCard","note":"支付金额不为正时拒绝支付。","state":"verified"}],"detail":{"summary":"支付金额直接来自库存保留返回的 totalCents。","segments":[{"kind":"value","title":"数据交接","headers":["来源","目标","传递值"],"rows":[["reservation","charge","reservation.totalCents"]]}]}},{"id":"n10","title":"授权支付","category":"支付","subgraph":"支付授权","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":1,"lineEnd":7,"symbol":"chargeCard","note":"构建已接受响应前会先执行令牌和正金额校验。","state":"verified"},{"path":"payment-gateway.js","lineStart":8,"lineEnd":11,"symbol":"chargeCard","note":"成功路径返回 accepted 状态及由 amountCents 确定的引用号。","state":"verified"}],"detail":{"summary":"两个前提满足时，支付接口返回可用于收据的授权结果。","segments":[{"kind":"schema","title":"成功结果","headers":["字段","值","作用"],"rows":[["status","accepted","成功授权状态"],["reference","demo-${amountCents}","收据中的支付引用号"]]}]}},{"id":"n11","title":"生成收据","category":"展示","subgraph":"收据交付","claimState":"verified","evidence":[{"path":"receipt-renderer.js","lineStart":1,"lineEnd":8,"symbol":"makeReceipt","note":"构建收据行，并继续传递支付状态和引用号。","state":"verified"}],"detail":{"summary":"收据模型汇集订单标识、商品行与支付结果。","segments":[{"kind":"schema","title":"收据字段","headers":["字段","来源"],"rows":[["orderId","输入订单"],["lines","规范化商品"],["paymentStatus","支付结果"],["paymentReference","支付结果"]]}]}},{"id":"n12","title":"格式化文本收据","category":"展示","subgraph":"收据交付","claimState":"verified","evidence":[{"path":"receipt-renderer.js","lineStart":11,"lineEnd":12,"symbol":"toPlainText","note":"将收据模型转换为可打印的纯文本。","state":"verified"}],"detail":{"summary":"文本格式化是独立的辅助函数，不由 createOrder 直接调用。","segments":[{"kind":"value","title":"文本输出","headers":["组成","格式"],"rows":[["首行","Order 加订单号"],["后续行","每项商品一行"],["连接方式","换行符"]]}]}},{"id":"n13","title":"退款路径","category":"可选恢复","subgraph":"后续选项","claimState":"inferred","evidence":[{"path":"payment-gateway.js","lineStart":14,"lineEnd":16,"symbol":"refundCard","note":"存在退款辅助函数，但订单流程没有调用它。","state":"inferred"}],"detail":{"summary":"退款函数存在，但订单成功路径没有连接到它。","segments":[{"kind":"value","title":"证据边界","headers":["已知事实","不能据此断言"],"rows":[["refundCard 可返回 refunded","创建订单会自动退款"],["函数接收 reference","它属于当前订单流程的恢复步骤"]]}]}},{"id":"n14","title":"订单生命周期审计","category":"未来集成","subgraph":"横切审计","claimState":"unconfirmed","evidence":[{"path":"receipt-renderer.js","symbol":"makeReceipt","note":"示例模块中没有会员积分持久化代码。","state":"unconfirmed"}],"detail":{"summary":"订单创建后是否记录横切生命周期审计，在当前示例中没有证据。","segments":[{"kind":"value","title":"安全解读","headers":["可以得出","不能得出"],"rows":[["审计是待补充的集成边界","已经保存了审计记录"],["当前源码未包含该能力","系统完全不需要审计"]]}]}}],"edges":[{"from":"n1","to":"n2","label":"解析协作方","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":6,"lineEnd":8,"symbol":"createOrder","state":"verified"}]},{"from":"n1","to":"n3","label":"并行规范化商品","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":9,"lineEnd":9,"symbol":"createOrder","state":"verified"}]},{"from":"n2","to":"n4","label":"选择库存协作方","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":10,"lineEnd":10,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n3","to":"n5","label":"开始可用性策略校验","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":11,"lineEnd":13,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n4","to":"n6","label":"准备库存预留","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":14,"lineEnd":14,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n5","to":"n7","label":"计算含可用性的总额","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":15,"lineEnd":17,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n5","to":"n6","label":"确认可预留","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":15,"lineEnd":17,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n3","to":"n4","label":"提供规范化商品","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":9,"lineEnd":10,"symbol":"createOrder","state":"verified"}]},{"from":"n2","to":"n8","label":"选择支付协作方","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":2,"lineEnd":4,"symbol":"chargeCard","state":"verified"}]},{"from":"n3","to":"n9","label":"计算预计支付金额","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":11,"lineEnd":11,"symbol":"createOrder","state":"verified"}]},{"from":"n8","to":"n10","label":"支付令牌有效","labelKind":"condition","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":8,"lineEnd":11,"symbol":"chargeCard","state":"verified"}]},{"from":"n9","to":"n10","label":"支付金额有效","labelKind":"condition","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":8,"lineEnd":11,"symbol":"chargeCard","state":"verified"}]},{"from":"n6","to":"n10","label":"库存预留就绪","labelKind":"condition","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":14,"lineEnd":17,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n7","to":"n10","label":"总额可用于支付","labelKind":"condition","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":10,"lineEnd":11,"symbol":"createOrder","state":"verified"}]},{"from":"n10","to":"n11","label":"返回支付结果","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":12,"lineEnd":12,"symbol":"createOrder","state":"verified"}]},{"from":"n11","to":"n12","label":"输出为文本","claimState":"verified","evidence":[{"path":"receipt-renderer.js","lineStart":11,"lineEnd":12,"symbol":"toPlainText","state":"verified"}]},{"from":"n10","to":"n13","label":"可能退款","claimState":"inferred","evidence":[{"path":"payment-gateway.js","lineStart":14,"lineEnd":16,"symbol":"refundCard","state":"inferred"}]},{"from":"n1","to":"n14","label":"可能开启生命周期审计","claimState":"unconfirmed","evidence":[{"path":"order-service.js","symbol":"createOrder","state":"unconfirmed"}]}]};
+    window.__ICM_MAPSPEC__ = {"schemaVersion":1,"meta":{"title":"咖啡柜台订单流程","question":"已提交的柜台订单如何从协作方准备开始，经过校验和支付，到达收据交付与后续操作？","scope":"sample-repo 中的四个小型 JavaScript 模块。","languageProfile":"javascript-esm","uiLocale":"zh-CN","layoutDirection":"TD","summary":"本示例刻意覆盖十个分组和十四个节点。订单入口分流到商品目录、库存、支付令牌、支付金额和横切审计；预留循环逐项校验目录、扣减库存并累计目录价格总额，令牌、金额与预留持有检查再汇合至授权步骤。它覆盖分支、汇合、跨分组连线，以及推断和待确认路径。所有已验证结论都指向示例源码的具体行。"},"nodes":[{"id":"n1","title":"创建订单","category":"编排","subgraph":"订单接入","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":5,"lineEnd":5,"symbol":"createOrder","note":"公开编排入口接收输入和可选的依赖覆盖。","state":"verified"},{"path":"order-service.js","lineStart":6,"lineEnd":8,"symbol":"createOrder","note":"存在注入协作方时使用注入实现，否则回退到导入的默认实现。","state":"verified"},{"path":"order-service.js","lineStart":9,"lineEnd":11,"symbol":"createOrder","note":"库存预留前会规范化商品，预留总额会成为支付金额。","state":"verified"},{"path":"order-service.js","lineStart":12,"lineEnd":12,"symbol":"createOrder","note":"收据构建器接收订单 ID、规范化商品和已接受的支付对象。","state":"verified"}],"detail":{"summary":"createOrder 编排完整订单路径，并将支付结果交给收据生成器。","segments":[{"kind":"value","title":"执行顺序","subtitle":"order-service.js :5-12","headers":["顺序","操作","作用"],"rows":[["1","解析协作方","允许测试覆盖默认实现"],["2","规范化商品","为后续服务提供稳定结构"],["3","保留库存并支付","将保留金额传给支付接口"],["4","生成收据","返回调用方可用的结果"]]}]}},{"id":"n2","title":"解析协作方","category":"依赖准备","subgraph":"订单接入","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":6,"lineEnd":8,"symbol":"createOrder","note":"提供时使用注入协作方，否则选择导入的默认实现。","state":"verified"}],"detail":{"summary":"库存、支付和收据三个协作方都可被测试依赖替换。","segments":[{"kind":"schema","title":"回退规则","headers":["操作","优先实现","默认实现"],"rows":[["保留库存","dependencies.reserveIngredients","reserveIngredients"],["授权支付","dependencies.chargeCard","chargeCard"],["生成收据","dependencies.makeReceipt","makeReceipt"]]}]}},{"id":"n3","title":"规范化商品","category":"数据转换","subgraph":"订单接入","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":9,"lineEnd":9,"symbol":"createOrder","note":"查询库存前先规范化输入。","state":"verified"},{"path":"order-service.js","lineStart":15,"lineEnd":20,"symbol":"normalizeItems","note":"将 sku、quantity 和 unitCents 转换为一致的记录形态。","state":"verified"}],"detail":{"summary":"输入商品在进入库存和收据处理前被规范化。","segments":[{"kind":"value","title":"商品字段处理","headers":["字段","处理","结果"],"rows":[["sku","String(item.sku)","稳定的商品标识"],["quantity","至少为 1","避免零或无效数量"],["unitCents","转换为数字","保留在规范化对象中"]]}]}},{"id":"n4","title":"读取商品目录","category":"库存查询","subgraph":"商品目录","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":9,"lineEnd":10,"symbol":"reserveIngredients","note":"为每个规范化 sku 获取商品目录项。","state":"verified"}],"detail":{"summary":"内存目录是库存校验和总额计算的共同数据来源。","segments":[{"kind":"value","title":"目录内容","headers":["SKU","可用数量","单价（分）"],"rows":[["espresso","12","280"],["oat-milk","8","90"],["croissant","5","350"]]}]}},{"id":"n5","title":"校验库存数量","category":"库存校验","subgraph":"可用性策略","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":11,"lineEnd":13,"symbol":"reserveIngredients","note":"目录项缺失或可用数量不足时拒绝。","state":"verified"}],"detail":{"summary":"失败的商品本身不会被扣减；循环中此前商品的扣减不会回滚。","segments":[{"kind":"value","title":"失败条件","headers":["条件","行为"],"rows":[["目录中不存在 SKU","抛出不可用商品错误"],["可用数量小于请求数量","抛出不可用商品错误"]]}]}},{"id":"n6","title":"扣减库存","category":"库存变更","subgraph":"库存预留","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":14,"lineEnd":14,"symbol":"reserveIngredients","note":"校验通过后才减少可用数量。","state":"verified"}],"detail":{"summary":"校验完成后，函数立即在目录对象上扣减库存。","segments":[{"kind":"schema","title":"保留结果","headers":["字段","含义"],"rows":[["reserved","库存已保留的布尔值"],["totalCents","用于支付的累计金额"]]}]}},{"id":"n7","title":"计算订单金额","category":"金额计算","subgraph":"金额计算","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":15,"lineEnd":17,"symbol":"reserveIngredients","note":"累加各行金额，并随预留结果返回 totalCents。","state":"verified"}],"detail":{"summary":"订单金额在库存保留循环中累计计算，而不是使用输入中的 unitCents。","segments":[{"kind":"value","title":"计算规则","headers":["表达式","数据来源","用途"],"rows":[["quantity × entry.unitCents","商品目录","累计 totalCents"],["totalCents","保留结果","支付金额"]]}]}},{"id":"n8","title":"校验支付令牌","category":"支付校验","subgraph":"支付校验","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":1,"lineEnd":4,"symbol":"chargeCard","note":"未提供支付令牌时拒绝支付。","state":"verified"}],"detail":{"summary":"支付协作方在缺少支付令牌时直接抛错，任何受理结果都必须先通过令牌守卫。","segments":[{"kind":"schema","title":"令牌守卫","headers":["参数","用途"],"rows":[["paymentToken","支付令牌校验"],["amountCents","正数金额校验与引用号生成"]]}]}},{"id":"n9","title":"校验支付金额为正","category":"支付校验","subgraph":"支付校验","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":5,"lineEnd":7,"symbol":"chargeCard","note":"支付金额不为正时拒绝支付。","state":"verified"}],"detail":{"summary":"支付协作方拒绝 amountCents 为零或负数的输入；金额来自库存保留返回的 totalCents，可能为零——示例未做更完整的数值合法性校验。","segments":[{"kind":"value","title":"金额守卫","headers":["来源","目标","传递值"],"rows":[["reservation","charge","reservation.totalCents"]]}]}},{"id":"n10","title":"授权支付","category":"支付","subgraph":"支付授权","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":1,"lineEnd":7,"symbol":"chargeCard","note":"构建已接受响应前会先执行令牌和正金额校验。","state":"verified"},{"path":"payment-gateway.js","lineStart":8,"lineEnd":11,"symbol":"chargeCard","note":"成功路径返回 accepted 状态及由 amountCents 确定的引用号。","state":"verified"}],"detail":{"summary":"两个前提满足时，支付接口返回可用于收据的授权结果。","segments":[{"kind":"schema","title":"成功结果","headers":["字段","值","作用"],"rows":[["status","accepted","成功授权状态"],["reference","demo-${amountCents}","收据中的支付引用号"]]}]}},{"id":"n11","title":"生成收据","category":"展示","subgraph":"收据交付","claimState":"verified","evidence":[{"path":"receipt-renderer.js","lineStart":1,"lineEnd":8,"symbol":"makeReceipt","note":"构建收据行，并继续传递支付状态和引用号。","state":"verified"}],"detail":{"summary":"收据模型汇集订单标识、商品行与支付结果。","segments":[{"kind":"schema","title":"收据字段","headers":["字段","来源"],"rows":[["orderId","输入订单"],["lines","规范化商品"],["paymentStatus","支付结果"],["paymentReference","支付结果"]]}]}},{"id":"n12","title":"格式化文本收据","category":"展示","subgraph":"收据交付","claimState":"verified","evidence":[{"path":"receipt-renderer.js","lineStart":11,"lineEnd":12,"symbol":"toPlainText","note":"将收据模型转换为可打印的纯文本。","state":"verified"}],"detail":{"summary":"文本格式化是独立的辅助函数，不由 createOrder 直接调用。","segments":[{"kind":"value","title":"文本输出","headers":["组成","格式"],"rows":[["首行","Order 加订单号"],["后续行","每项商品一行"],["连接方式","换行符"]]}]}},{"id":"n13","title":"退款路径","category":"可选恢复","subgraph":"后续选项","claimState":"inferred","evidence":[{"path":"payment-gateway.js","lineStart":14,"lineEnd":16,"symbol":"refundCard","note":"存在退款辅助函数，但订单流程没有调用它。","state":"inferred"}],"detail":{"summary":"退款函数存在，但订单成功路径没有连接到它。","segments":[{"kind":"value","title":"证据边界","headers":["已知事实","不能据此断言"],"rows":[["refundCard 可返回 refunded","创建订单会自动退款"],["函数接收 reference","它属于当前订单流程的恢复步骤"]]}]}},{"id":"n14","title":"订单生命周期审计","category":"未来集成","subgraph":"横切审计","claimState":"unconfirmed","evidence":[{"path":"receipt-renderer.js","symbol":"makeReceipt","note":"示例模块中没有审计调用、审计事件或审计持久化实现。","state":"unconfirmed"}],"detail":{"summary":"订单创建后是否记录横切生命周期审计，在当前示例中没有证据。","segments":[{"kind":"value","title":"安全解读","headers":["可以得出","不能得出"],"rows":[["审计是待补充的集成边界","已经保存了审计记录"],["当前源码未包含该能力","系统完全不需要审计"]]}]}}],"edges":[{"from":"n1","to":"n2","label":"解析协作方","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":6,"lineEnd":8,"symbol":"createOrder","state":"verified"}]},{"from":"n1","to":"n3","label":"规范化商品","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":9,"lineEnd":9,"symbol":"createOrder","state":"verified"}]},{"from":"n2","to":"n4","label":"选择库存协作方","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":10,"lineEnd":10,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n3","to":"n5","label":"开始可用性策略校验","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":11,"lineEnd":13,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n4","to":"n6","label":"准备库存预留","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":14,"lineEnd":14,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n5","to":"n7","label":"计算含可用性的总额","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":15,"lineEnd":17,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n5","to":"n6","label":"确认可预留","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":15,"lineEnd":17,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n3","to":"n4","label":"提供规范化商品","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":9,"lineEnd":10,"symbol":"createOrder","state":"verified"}]},{"from":"n2","to":"n8","label":"选择支付协作方","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":2,"lineEnd":4,"symbol":"chargeCard","state":"verified"}]},{"from":"n7","to":"n9","label":"扣款金额来自预留总额","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":15,"lineEnd":16,"symbol":"reserveIngredients","note":"预留循环按每个成交商品的目录单价累计 totalCents。","state":"verified"},{"path":"payment-gateway.js","lineStart":5,"lineEnd":7,"symbol":"chargeCard","note":"金额守卫校验的是预留总额，不是归一化输出。","state":"verified"}]},{"from":"n8","to":"n10","label":"支付令牌有效","labelKind":"condition","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":8,"lineEnd":11,"symbol":"chargeCard","state":"verified"}]},{"from":"n9","to":"n10","label":"支付金额有效","labelKind":"condition","claimState":"verified","evidence":[{"path":"payment-gateway.js","lineStart":8,"lineEnd":11,"symbol":"chargeCard","state":"verified"}]},{"from":"n6","to":"n10","label":"库存预留就绪","labelKind":"condition","claimState":"verified","evidence":[{"path":"inventory-checker.js","lineStart":14,"lineEnd":17,"symbol":"reserveIngredients","state":"verified"}]},{"from":"n7","to":"n10","label":"总额可用于支付","labelKind":"condition","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":10,"lineEnd":11,"symbol":"createOrder","state":"verified"}]},{"from":"n10","to":"n11","label":"返回支付结果","claimState":"verified","evidence":[{"path":"order-service.js","lineStart":12,"lineEnd":12,"symbol":"createOrder","state":"verified"}]},{"from":"n11","to":"n12","label":"输出为文本","claimState":"verified","evidence":[{"path":"receipt-renderer.js","lineStart":11,"lineEnd":12,"symbol":"toPlainText","state":"verified"}]},{"from":"n10","to":"n13","label":"可能退款","claimState":"inferred","evidence":[{"path":"payment-gateway.js","lineStart":14,"lineEnd":16,"symbol":"refundCard","state":"inferred"}]},{"from":"n1","to":"n14","label":"可能开启生命周期审计","claimState":"unconfirmed","evidence":[{"path":"order-service.js","symbol":"createOrder","state":"unconfirmed"}]}]};
     window.__ICM_DEPS_CONFIG__ = [{"name":"react","version":"18.3.1","sources":[{"url":"https://registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js","integrity":"sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z","crossorigin":"anonymous","license":"MIT","timeoutMs":8000},{"url":"https://cdn.staticfile.org/react/18.3.1/umd/react.production.min.js","integrity":"sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z","crossorigin":"anonymous","license":"MIT","timeoutMs":8000},{"url":"https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js","integrity":"sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z","crossorigin":"anonymous","license":"MIT","timeoutMs":8000},{"url":"https://unpkg.com/react@18.3.1/umd/react.production.min.js","integrity":"sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z","crossorigin":"anonymous","license":"MIT","timeoutMs":8000},{"url":"https://cdn.bootcdn.net/ajax/libs/react/18.3.1/umd/react.production.min.js","integrity":"sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z","crossorigin":"anonymous","license":"MIT","timeoutMs":8000}]},{"name":"react-dom","version":"18.3.1","sources":[{"url":"https://registry.npmmirror.com/react-dom/18.3.1/files/umd/react-dom.production.min.js","integrity":"sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1","crossorigin":"anonymous","license":"MIT","timeoutMs":8000},{"url":"https://cdn.staticfile.org/react-dom/18.3.1/umd/react-dom.production.min.js","integrity":"sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1","crossorigin":"anonymous","license":"MIT","timeoutMs":8000},{"url":"https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js","integrity":"sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1","crossorigin":"anonymous","license":"MIT","timeoutMs":8000},{"url":"https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js","integrity":"sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1","crossorigin":"anonymous","license":"MIT","timeoutMs":8000},{"url":"https://cdn.bootcdn.net/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js","integrity":"sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1","crossorigin":"anonymous","license":"MIT","timeoutMs":8000}]},{"name":"mermaid","version":"11.16.1","sources":[{"url":"https://registry.npmmirror.com/mermaid/11.16.1/files/dist/mermaid.min.js","integrity":"sha384-aBQXj4hK6Jm05i7aQAsUV3bLdSUrHX1BGYfMB0166TtWt/RRaw+h0Eelme9OCOvy","crossorigin":"anonymous","license":"MIT","timeoutMs":8000},{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.16.1/dist/mermaid.min.js","integrity":"sha384-aBQXj4hK6Jm05i7aQAsUV3bLdSUrHX1BGYfMB0166TtWt/RRaw+h0Eelme9OCOvy","crossorigin":"anonymous","license":"MIT","timeoutMs":8000},{"url":"https://unpkg.com/mermaid@11.16.1/dist/mermaid.min.js","integrity":"sha384-aBQXj4hK6Jm05i7aQAsUV3bLdSUrHX1BGYfMB0166TtWt/RRaw+h0Eelme9OCOvy","crossorigin":"anonymous","license":"MIT","timeoutMs":8000}]}];
   </script>
   <script>
@@ -1129,6 +1272,85 @@ function safeSubgraphId(userTexts) {
     if (!ids.has(text)) ids.set(text, `sg${number++}`);
   }
   return ids;
+}
+
+/**
+ * Mermaid sequenceDiagram 文本编码器（与 flowchart 的 mermaid-encoder.mjs 互不复用）。
+ *
+ * flowchart 编码器服务于引号标签上下文;sequence 的消息文本/参与者别名是裸
+ * 语句上下文,复用它会把 `;` 语句分隔、`#` 实体前缀、`&amp;`/`&quot;` 实体、
+ * `<br/>` 换行等结构走私进 DSL(已在 Mermaid 11.16.1 逐项复现)。
+ *
+ * 上下文分级(字面文本合同,逐项经 Mermaid 11.16.1 锁定版本验证):
+ *  - 消息文本与参与者别名:`encodeSequenceLiteralText` — Mermaid `#code;` 实体
+ *    语法,9 字符表,**单遍历字符映射**。链式 replace 会对自身输出中的 `#` 与
+ *    `;` 二次转义,禁止。
+ *  - 帧条件(loop/opt/alt/else 的条件文本):**纯文本直出**,不做实体编码——
+ *    实体处于超过帧宽的连续长词内部时会被窄帧自动换行按字符拆出残片,且
+ *    `sequence.wrap: false` 不可救。特殊字符与换行由 MapSpec 校验层拒绝,
+ *    生成器另经 `assertSequenceFrameConditionText` 防御性断言(纵深防御)。
+ *
+ * 编码表与 skill/references/mapspec-v1.build-rules.json 的
+ * sequenceDiagramContract.literalTextEncoding.entityMap 保持一致,由
+ * tests/build/mermaid-sequence.test.mjs 锁定两者一致。
+ *
+ * 本模块会被 build-html.mjs 内联进单文件产物(stripModuleSyntax:仅允许单行
+ * 命名 import 与 export function),不得引入浏览器不可用的语法。
+ */
+
+const SEQUENCE_ENTITY_MAP = new Map([
+  ['&', '#38;'],
+  [';', '#59;'],
+  ['#', '#35;'],
+  ['"', '#34;'],
+  ['<', '#60;'],
+  ['>', '#62;'],
+  ['$', '#36;'],
+  [':', '#58;'],
+  ['%', '#37;'],
+]);
+
+// % 的威胁模型特殊:%%{…}%% 被 Mermaid removeDirectives 静默删除,不破坏结构、
+// 不改变计数、不产生 foreignObject,只有「原文完整可见」断言能捕获。
+function sequenceEntityMap() {
+  return SEQUENCE_ENTITY_MAP;
+}
+
+/**
+ * 消息文本与参与者别名编码:9 字符单遍历映射为 `#code;` 实体。
+ * 按 Unicode 码点迭代(for...of),代理对(emoji 等)作为整体保留。
+ */
+function encodeSequenceLiteralText(text) {
+  if (typeof text !== 'string') return '';
+  let out = '';
+  for (const ch of text) {
+    out += SEQUENCE_ENTITY_MAP.has(ch) ? SEQUENCE_ENTITY_MAP.get(ch) : ch;
+  }
+  return out;
+}
+
+/**
+ * 防御纵深:生成器在拼接任何用户文本前断言其单行(换行注入 DSL 语句)。
+ * 校验层已拒绝,这里 fail closed——发现残留即抛错,绝不静默清洗。
+ */
+function assertSequenceSingleLineText(text, fieldLabel) {
+  if (typeof text !== 'string' || !/[\n\r]/.test(text)) return;
+  throw new Error(`sequence ${fieldLabel} 含换行(显示文本必须单行): ${JSON.stringify(text)}`);
+}
+
+/**
+ * 防御纵深:帧条件纯文本直出,拼接前断言无 9 个禁用字符与换行。
+ * 实体会被窄帧 wrapLabel 拆坏、$ 触发数学渲染、: 被 wrap:/nowrap: 消费、
+ * % 被指令预处理删除;校验层已拒绝,这里 fail closed。
+ */
+function assertSequenceFrameConditionText(text, fieldLabel) {
+  assertSequenceSingleLineText(text, fieldLabel);
+  if (typeof text !== 'string') return;
+  for (const ch of text) {
+    if (SEQUENCE_ENTITY_MAP.has(ch)) {
+      throw new Error(`sequence ${fieldLabel} 含帧条件禁用字符(${ch}): ${JSON.stringify(text)}`);
+    }
+  }
 }
 
 /**
@@ -1223,6 +1445,177 @@ function mapspecToMermaid(spec) {
   return lines.join('\n');
 }
 
+/**
+ * MapSpec → Mermaid sequenceDiagram DSL。
+ *
+ * 本模块只负责确定性文本转换;MapSpec 的结构、证据、文本合同与 activation
+ * 配平校验由 validate-map-spec.mjs 在调用前完成。生成器对显示文本另行断言
+ * (单行 + 帧条件字符合同),对结构畸形宽松降级——与 flowchart 生成器同风格,
+ * 但用户文本一律经 mermaid-sequence-encoder.mjs,不存在第二处字符串组装。
+ *
+ * 参与者 ID 确定性映射(经 Mermaid 11.16.1 验证):现有节点 ID 正则的合法值可能与 sequence
+ * 语法关键字冲突(end/loop/alt/autonumber/participant 直接作端点会解析失败),
+ * 按声明序映射为内部安全 ID icm_p1、icm_p2…,participant 行与消息端点一律
+ * 使用内部 ID;MapSpec、选择键、证据与详情面板全程只使用原始 id。
+ *
+ * activation 内联语法(经 Mermaid 11.16.1 验证):
+ *   activatesTo   → `from->>+to:`(+ 前缀于 to 方,激活 to)
+ *   deactivatesFrom → `from-->>-to:`(- 前缀于 to 方,但去激活的是 from 方——
+ *     `B-->>-A` 报 Trying to inactivate an inactive participant (B) 即此语义)
+ *   两布尔同真(A->>+-B)在锁定版本解析失败,校验层已拒绝。
+ *   帧内禁带 activation;外层激活包住整帧是允许且推荐的建模。
+ *
+ * 本模块会被 build-html.mjs 内联进单文件产物(stripModuleSyntax:仅允许单行
+ * 命名 import 与 export function)。
+ */
+
+const MAX_FRAME_DEPTH = 2;
+const INDENT_UNIT = '    ';
+
+function internalParticipantId(index) {
+  return 'icm_p' + (index + 1);
+}
+
+function buildInternalIdMap(participants) {
+  const ids = new Map();
+  if (Array.isArray(participants)) {
+    participants.forEach(function mapParticipant(participant, index) {
+      if (participant && typeof participant.id === 'string' && !ids.has(participant.id)) {
+        ids.set(participant.id, internalParticipantId(index));
+      }
+    });
+  }
+  return ids;
+}
+
+function appendMessage(lines, message, internalIds, indent, depth) {
+  const from = internalIds.get(message.from) || message.from;
+  const to = internalIds.get(message.to) || message.to;
+  const arrow = message.arrowKind === 'dashed' ? '-->>' : '->>';
+  // Mermaid 内联 activation 的语法位置(在 Mermaid 11.16.1 复现确认):
+  //   activatesTo   → `from->>+to:`(+ 前缀于 to 方,激活 to)
+  //   deactivatesFrom → `from-->>-to:`(- 前缀于 to 方,但**去激活的是 from 方**;
+  //     `B-->>-A` 报 Trying to inactivate an inactive participant (B) 即此语义)
+  // 两布尔同真(`A->>+-B`)在锁定版本解析失败,校验层已拒绝,这里同真时按 + 优先。
+  const activatesTo = message.activation && message.activation.activatesTo === true;
+  const deactivatesFrom = message.activation && message.activation.deactivatesFrom === true;
+  const toPrefix = activatesTo ? '+' : (deactivatesFrom ? '-' : '');
+  assertSequenceSingleLineText(message.label, "message '" + String(message.label) + "' 的 label");
+  lines.push(indent + from + arrow + toPrefix + to + ': ' + encodeSequenceLiteralText(message.label));
+  return depth;
+}
+
+function appendFrameCondition(lines, keyword, condition, indent) {
+  if (condition === undefined || condition === null || condition === '') {
+    lines.push(indent + keyword);
+    return;
+  }
+  assertSequenceFrameConditionText(condition, "frame 条件 '" + String(condition) + "'");
+  lines.push(indent + keyword + ' ' + condition);
+}
+
+function appendFrame(lines, frame, internalIds, indent, depth) {
+  if (depth > MAX_FRAME_DEPTH) {
+    throw new Error('sequence 帧嵌套深度超过上限 ' + MAX_FRAME_DEPTH);
+  }
+  const childIndent = indent + INDENT_UNIT;
+  if (frame.kind === 'alt') {
+    const branches = Array.isArray(frame.branches) ? frame.branches : [];
+    branches.forEach(function appendBranch(branch, index) {
+      const condition = branch && branch.label;
+      if (index === 0) {
+        appendFrameCondition(lines, 'alt', condition, indent);
+      } else {
+        appendFrameCondition(lines, 'else', condition, indent);
+      }
+      walkSequenceItems(lines, branch && branch.messages, internalIds, childIndent, depth + 1);
+    });
+    lines.push(indent + 'end');
+    return;
+  }
+  const keyword = frame.kind === 'opt' ? 'opt' : 'loop';
+  appendFrameCondition(lines, keyword, frame.label, indent);
+  walkSequenceItems(lines, frame.messages, internalIds, childIndent, depth + 1);
+  lines.push(indent + 'end');
+}
+
+function walkSequenceItems(lines, items, internalIds, indent, depth) {
+  if (depth > MAX_FRAME_DEPTH + 1) {
+    // 帧内容器允许处于 MAX_FRAME_DEPTH 层(深度 2 的帧内的消息),再深才是畸形。
+    throw new Error('sequence 帧嵌套深度超过上限 ' + MAX_FRAME_DEPTH);
+  }
+  if (!Array.isArray(items)) return;
+  for (const item of items) {
+    if (!item || typeof item !== 'object') continue;
+    if (item.frame === true) {
+      appendFrame(lines, item, internalIds, indent, depth);
+    } else {
+      appendMessage(lines, item, internalIds, indent, depth);
+    }
+  }
+}
+
+/**
+ * 生成 sequenceDiagram DSL 文本。autonumber 统一开启;mirrorActors/useMaxWidth
+ * 由 render.js 的 mermaid.initialize sequence 配置注入,不进 DSL。
+ */
+function mapspecToMermaidSequence(spec) {
+  const participants = Array.isArray(spec.participants) ? spec.participants : [];
+  const internalIds = buildInternalIdMap(participants);
+  const lines = ['sequenceDiagram', INDENT_UNIT + 'autonumber'];
+  for (const participant of participants) {
+    if (!participant || typeof participant.id !== 'string') continue;
+    assertSequenceSingleLineText(participant.title, "participant '" + participant.id + "' 的 title");
+    lines.push(INDENT_UNIT + 'participant ' + internalIds.get(participant.id)
+      + ' as ' + encodeSequenceLiteralText(participant.title));
+  }
+  walkSequenceItems(lines, spec.messages, internalIds, INDENT_UNIT, 0);
+  return lines.join('\n');
+}
+
+/**
+ * 递归展开后的声明消息顺序(深度优先),与渲染产物的消息记录按序一一对应。
+ * key 是选择键的递归路径部分(1 起始):顶层第 i 个元素为 'i',其中第 j 条
+ * 消息为 'i.j',嵌套帧内为 'i.j.k'。alt 的分支不占路径位,分支内消息在帧内
+ * 按文档序连续编号。同一端点多条消息、嵌套帧内消息各自持有独立 key,选择与
+ * 阅读位置互不串用。
+ */
+function sequenceMessagesInOrder(spec) {
+  const messages = [];
+  const visitFrame = function visitFrame(frame, framePath) {
+    let index = 0;
+    const visitBranch = function visitBranch(items) {
+      if (!Array.isArray(items)) return;
+      for (const item of items) {
+        if (!item || typeof item !== 'object') continue;
+        index += 1;
+        const path = framePath + '.' + index;
+        if (item.frame === true) visitFrame(item, path);
+        else messages.push({ key: path, message: item });
+      }
+    };
+    visitBranch(frame.messages);
+    if (Array.isArray(frame.branches)) {
+      for (const branch of frame.branches) {
+        visitBranch(branch && branch.messages);
+      }
+    }
+  };
+  const visitTop = function visitTop(items) {
+    if (!Array.isArray(items)) return;
+    let index = 0;
+    for (const item of items) {
+      if (!item || typeof item !== 'object') continue;
+      index += 1;
+      const path = String(index);
+      if (item.frame === true) visitFrame(item, path);
+      else messages.push({ key: path, message: item });
+    }
+  };
+  visitTop(spec && Array.isArray(spec.messages) ? spec.messages : []);
+  return messages;
+}
+
 /*
  * 浏览器端渲染器。
  *
@@ -1267,6 +1660,9 @@ function mapspecToMermaid(spec) {
   let hoveredEdgeId = null;
   let lastFocusedNodeEl = null;
   let boundNodeElements = [];
+  // sequence 交互命中判断注入 createPanZoom：命中消息记录与参与者元素时跳过
+  // 指针捕获，保留原生 click；flowchart 传默认判断，行为不变。
+  let sequenceInteractionHitTest = null;
   let reactRoot = null;
   const selectedListeners = new Set();
 
@@ -1285,6 +1681,7 @@ function mapspecToMermaid(spec) {
     selectedNodeId = id;
     if (nodeEl) lastFocusedNodeEl = nodeEl;
     syncSelectedNodeAttributes();
+    syncSelectedSequenceAttributes();
     notifySelection(id);
   }
 
@@ -1299,6 +1696,7 @@ function mapspecToMermaid(spec) {
     const previous = lastFocusedNodeEl;
     selectedNodeId = null;
     syncSelectedNodeAttributes();
+    syncSelectedSequenceAttributes();
     notifySelection(null);
     if (previous && typeof previous.focus === 'function') previous.focus();
   }
@@ -1386,7 +1784,7 @@ function mapspecToMermaid(spec) {
     }
   }
 
-  async function renderGraph(spec, container) {
+  function initializeMermaid() {
     if (!window.mermaid) throw new Error('Mermaid 依赖尚未加载');
     window.mermaid.initialize({
       startOnLoad: false,
@@ -1401,7 +1799,17 @@ function mapspecToMermaid(spec) {
         // 不依赖后续移动 SVG 元素来换取间距。
         subGraphTitleMargin: { top: 10, bottom: 52 },
       },
+      // sequence 独立渲染链:useMaxWidth:false 下输出显式
+      // width/height + viewBox,与 panzoom 方案兼容;关闭默认的底部镜像参与者。
+      sequence: {
+        useMaxWidth: false,
+        mirrorActors: false,
+      },
     });
+  }
+
+  async function renderGraph(spec, container) {
+    initializeMermaid();
     const rendered = await window.mermaid.render('icm-graph', mapspecToMermaid(spec));
     container.innerHTML = rendered.svg;
     const svg = container.querySelector('svg');
@@ -1411,6 +1819,19 @@ function mapspecToMermaid(spec) {
     svg.setAttribute('data-icm-ui-locale', uiLocaleForSpec(spec));
     const hasLayoutBands = Array.isArray(spec.meta.layoutBands) && spec.meta.layoutBands.length > 0;
     svg.setAttribute('data-icm-stage-layout', hasLayoutBands ? 'banded' : (spec.meta.layoutDirection === 'LR' ? 'lr' : 'td'));
+    return svg;
+  }
+
+  async function renderSequenceGraph(spec, container) {
+    initializeMermaid();
+    const rendered = await window.mermaid.render('icm-graph', mapspecToMermaidSequence(spec));
+    container.innerHTML = rendered.svg;
+    const svg = container.querySelector('svg');
+    if (!svg) throw new Error('Mermaid 未生成 SVG');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', spec.meta.title);
+    svg.setAttribute('data-icm-ui-locale', uiLocaleForSpec(spec));
+    svg.setAttribute('data-icm-diagram-kind', 'sequence');
     return svg;
   }
 
@@ -1440,6 +1861,11 @@ function mapspecToMermaid(spec) {
         ariaLabel: '图谱阅读说明、证据状态与操作图例', reading: '阅读说明', group: '分组',
         condition: '条件', action: '动作关系', internal: '组内关系', evidence: '证据状态',
         verified: '已验证', inferred: '推断', unconfirmed: '待确认', emptyDetail: '暂无更多详情。',
+        // sequence 时序图专属文案:图例语境由「节点/关系线」换为「消息/参与者」。
+        sequenceInteractionHint: '点击消息或参与者查看详情',
+        sequenceLegendParticipant: '参与者', sequenceLegendMessage: '消息', sequenceLegendFrame: '帧（循环/条件/分支）',
+        sequenceParticipantHoverTitle: '点击查看该参与者的证据详情',
+        sequenceMessageHoverTitle: '点击查看该消息的证据详情',
       };
     }
     return {
@@ -1450,6 +1876,11 @@ function mapspecToMermaid(spec) {
       ariaLabel: 'Graph reading guide, evidence status, and controls', reading: 'Reading guide', group: 'Group',
       condition: 'Condition', action: 'Action relationship', internal: 'Internal relationship', evidence: 'Evidence status',
       verified: 'verified', inferred: 'inferred', unconfirmed: 'unconfirmed', emptyDetail: 'No further details.',
+      // Sequence-specific copy: the legend speaks of messages/participants instead of nodes/lines.
+      sequenceInteractionHint: 'Click a message or participant for details',
+      sequenceLegendParticipant: 'Participant', sequenceLegendMessage: 'Message', sequenceLegendFrame: 'Frame (loop/condition/branch)',
+      sequenceParticipantHoverTitle: 'Click for evidence details of this participant',
+      sequenceMessageHoverTitle: 'Click for evidence details of this message',
     };
   }
 
@@ -1547,6 +1978,8 @@ function mapspecToMermaid(spec) {
       const node = nodesById.get(nodeId);
       boundNodeElements.push(nodeElement);
       nodeElement.setAttribute('data-node-id', nodeId);
+      // focusNode 的泛化定位标记:flowchart 节点与 sequence 记录/参与者共用。
+      nodeElement.setAttribute('data-icm-focus-id', nodeId);
       nodeElement.setAttribute('data-claim-state', node.claimState);
       nodeElement.setAttribute('tabindex', '0');
       nodeElement.setAttribute('role', 'button');
@@ -2451,7 +2884,256 @@ function mapspecToMermaid(spec) {
     }
   }
 
-  function createPanZoom(viewportEl, canvasEl, svgEl) {
+  // ===================== sequence(diagramKind=sequence)独立增强层 =====================
+  // 与 flowchart 的布线、foreignObject 修复和关系线钉住逻辑无交集。映射单位是
+  // 「消息记录」——每条消息在文档序中的连续块(文本集合 → 消息线 → 序号);锚点
+  // 是每条消息恰好一条的 .messageLine0/.messageLine1,不以 text.messageText 计数
+  // (Mermaid 会把多行消息文本渲染为多个 text 节点,文本计数会错位)。Mermaid
+  // 11.16.1 的 DOM 归属已在实施时逐项探测锁定:参与者容器为
+  // g[data-id="icm_pN"],帧条件为 text.loopText,else 条件为 text.sectionTitle,
+  // 帧关键字为 text.labelText。
+
+  const SEQUENCE_MESSAGE_TITLE_MAX_CODE_POINTS = 120;
+  let boundSequenceElements = [];
+
+  function sequenceParticipantTitle(spec, participantId) {
+    const participants = Array.isArray(spec.participants) ? spec.participants : [];
+    const found = participants.find(function matchesId(participant) {
+      return participant && participant.id === participantId;
+    });
+    return found ? found.title : participantId;
+  }
+
+  function truncateSequenceTitle(text) {
+    const codePoints = Array.from(text);
+    return codePoints.length > SEQUENCE_MESSAGE_TITLE_MAX_CODE_POINTS
+      ? codePoints.slice(0, SEQUENCE_MESSAGE_TITLE_MAX_CODE_POINTS).join('') + '…'
+      : text;
+  }
+
+  function sequenceMessageTitle(record, index, spec) {
+    const message = record.message;
+    const text = '#' + (index + 1) + ' '
+      + sequenceParticipantTitle(spec, message.from) + ' → '
+      + sequenceParticipantTitle(spec, message.to) + ': '
+      + (message.label || '');
+    return truncateSequenceTitle(text);
+  }
+
+  function collectSequenceMessageRecords(svgEl) {
+    // 每条消息恰有一条线(合同:label 单行)。以线为锚点,按文档序把它前面的
+    // 文本集合与后面的序号聚合为同一条消息记录的连续块。
+    const elements = svgEl.querySelectorAll('.messageLine0, .messageLine1, text.messageText, text.sequenceNumber');
+    const records = [];
+    let current = null;
+    let pendingTexts = [];
+    for (const el of elements) {
+      const cls = el.getAttribute('class') || '';
+      if (cls.indexOf('messageLine0') >= 0 || cls.indexOf('messageLine1') >= 0) {
+        current = { line: el, texts: pendingTexts, number: null };
+        pendingTexts = [];
+        records.push(current);
+      } else if (cls.indexOf('messageText') >= 0) {
+        pendingTexts.push(el);
+      } else if (current) {
+        current.number = el;
+      }
+    }
+    return records;
+  }
+
+  function buildSequenceMessageRecords(svgEl, spec) {
+    const records = collectSequenceMessageRecords(svgEl);
+    const declared = sequenceMessagesInOrder(spec);
+    if (records.length !== declared.length) {
+      throw new Error('sequence 消息记录数 ' + records.length
+        + ' 与声明条数 ' + declared.length + ' 不一致,映射中止');
+    }
+    return records.map(function pairRecord(record, index) {
+      return {
+        line: record.line,
+        texts: record.texts,
+        number: record.number,
+        key: declared[index].key,
+        message: declared[index].message,
+      };
+    });
+  }
+
+  // 状态点与 flowchart 节点左上角状态点同一套三态色与语义;position 决定落在
+  // 消息文本左侧还是参与者框左上角。坐标用 getBBox(锚元素局部坐标系)。
+  function addSequenceStateDot(anchorElement, claimState, locale, position) {
+    const container = anchorElement.parentNode;
+    if (!container) return;
+    const box = anchorElement.getBBox();
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.classList.add('icm-sequence-state-dot', 'icm-node-evidence-' + claimState);
+    dot.setAttribute('data-claim-state', claimState);
+    dot.setAttribute('cx', String(position === 'top-left' ? box.x + 9 : box.x - 10));
+    dot.setAttribute('cy', String(position === 'top-left' ? box.y + 9 : box.y + box.height / 2));
+    dot.setAttribute('r', '4.5');
+    dot.setAttribute('aria-hidden', 'true');
+    dot.setAttribute('pointer-events', 'none');
+    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    title.textContent = claimStateLabel(locale, claimState);
+    dot.appendChild(title);
+    container.appendChild(dot);
+  }
+
+  function bindSequenceParticipants(svgEl, spec, locale) {
+    const participants = Array.isArray(spec.participants) ? spec.participants : [];
+    const byInternalId = new Map();
+    participants.forEach(function mapParticipant(participant, index) {
+      byInternalId.set('icm_p' + (index + 1), participant);
+    });
+    const participantHoverCopy = uiCopyForLocale(locale).sequenceParticipantHoverTitle;
+    for (const groupEl of svgEl.querySelectorAll('g[data-id]')) {
+      const participant = byInternalId.get(groupEl.getAttribute('data-id'));
+      if (!participant) continue;
+      const selectionKey = 'participant:' + participant.id;
+      groupEl.setAttribute('data-icm-participant-id', participant.id);
+      groupEl.setAttribute('data-icm-focus-id', selectionKey);
+      groupEl.setAttribute('data-claim-state', participant.claimState);
+      groupEl.classList.add('icm-state-' + participant.claimState, 'icm-sequence-interactive');
+      groupEl.setAttribute('tabindex', '0');
+      groupEl.setAttribute('role', 'button');
+      groupEl.setAttribute('aria-label', participant.title + ' — ' + claimStateLabel(locale, participant.claimState));
+      groupEl.setAttribute('aria-pressed', 'false');
+      const frameEl = groupEl.querySelector('rect.actor');
+      const titleEl = groupEl.querySelector('text.actor');
+      if (frameEl) frameEl.setAttribute('title', participantHoverCopy);
+      if (titleEl) titleEl.setAttribute('title', participantHoverCopy);
+      groupEl.addEventListener('click', function onParticipantClick() {
+        setSelected(selectionKey, groupEl);
+      });
+      groupEl.addEventListener('keydown', function onParticipantKeydown(event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          setSelected(selectionKey, groupEl);
+        }
+      });
+      boundSequenceElements.push(groupEl);
+      if (frameEl) addSequenceStateDot(frameEl, participant.claimState, locale, 'top-left');
+    }
+  }
+
+  function bindSequenceRecordEvents(svgEl, spec, records, locale) {
+    const messageHoverCopy = uiCopyForLocale(locale).sequenceMessageHoverTitle;
+    for (let index = 0; index < records.length; index += 1) {
+      const record = records[index];
+      const selectionKey = 'message:' + record.key;
+      const ariaTitle = sequenceMessageTitle(record, index, spec)
+        + ' — ' + claimStateLabel(locale, record.message.claimState);
+      const targets = [record.line, record.number].concat(record.texts);
+      for (const el of targets) {
+        if (!el) continue;
+        el.setAttribute('data-icm-message-key', record.key);
+        el.setAttribute('data-icm-focus-id', selectionKey);
+        el.setAttribute('data-claim-state', record.message.claimState);
+        el.classList.add('icm-state-' + record.message.claimState, 'icm-sequence-interactive');
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('role', 'button');
+        el.setAttribute('aria-label', ariaTitle);
+        el.setAttribute('aria-pressed', 'false');
+        el.setAttribute('title', messageHoverCopy);
+        el.addEventListener('click', function onMessageClick() {
+          setSelected(selectionKey, record.line);
+        });
+        el.addEventListener('keydown', function onMessageKeydown(event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setSelected(selectionKey, record.line);
+          }
+        });
+        boundSequenceElements.push(el);
+      }
+      if (record.texts.length > 0) {
+        addSequenceStateDot(record.texts[0], record.message.claimState, locale, 'before-text');
+      }
+    }
+  }
+
+  // 选中反馈替代时序版钉住:单选中,点击消息/参与者打开面板并高亮其记录
+  // (文本、线、序号),关闭面板或 Esc 经 clearSelection 清除。
+  function syncSelectedSequenceAttributes() {
+    for (const el of boundSequenceElements) {
+      const isSelected = selectedNodeId !== null
+        && el.getAttribute('data-icm-focus-id') === selectedNodeId;
+      el.classList.toggle('icm-sequence-selected', isSelected);
+      if (el.getAttribute('role') === 'button') {
+        el.setAttribute('aria-pressed', String(isSelected));
+      }
+    }
+  }
+
+  function annotateSequenceDiagram(svgEl, spec) {
+    const locale = uiLocaleForSpec(spec);
+    const records = buildSequenceMessageRecords(svgEl, spec);
+    boundSequenceElements = [];
+    bindSequenceParticipants(svgEl, spec, locale);
+    bindSequenceRecordEvents(svgEl, spec, records, locale);
+  }
+
+  // 详情视图模型适配:sequence 没有 nodes,DetailPanel 消费的选择模型在渲染层
+  // 组装;detail 缺省时视图模型置 null,面板只展示标题、状态与证据。
+  function buildSequenceViewModels(spec) {
+    const models = new Map();
+    const participants = Array.isArray(spec.participants) ? spec.participants : [];
+    for (const participant of participants) {
+      models.set('participant:' + participant.id, {
+        id: 'participant:' + participant.id,
+        title: participant.title,
+        claimState: participant.claimState,
+        evidence: participant.evidence,
+        detail: participant.detail || null,
+      });
+    }
+    const declared = sequenceMessagesInOrder(spec);
+    declared.forEach(function mapMessage(entry, index) {
+      const message = entry.message;
+      const text = '#' + (index + 1) + ' '
+        + sequenceParticipantTitle(spec, message.from) + ' → '
+        + sequenceParticipantTitle(spec, message.to) + ': '
+        + (message.label || '');
+      models.set('message:' + entry.key, {
+        id: 'message:' + entry.key,
+        title: truncateSequenceTitle(text),
+        claimState: message.claimState,
+        evidence: message.evidence,
+        detail: message.detail || null,
+      });
+    });
+    return models;
+  }
+
+  function createPanZoom(viewportEl, canvasEl, svgEl, interactionHitTest, contentBounds, fitInsets, minScaleProvider) {
+    // 交互命中判断:命中时跳过指针捕获,保留交互元素的原生 click 序列。
+    // flowchart 用默认判断(节点卡片 + 关系线悬停组),sequence 注入消息记录
+    // 与参与者元素;若先在 viewport 捕获指针,浏览器会把 pointerup/click
+    // 重定向到 viewport,导致节点首击与关系线钉住失效(同一根因)。
+    const isInteractiveTarget = interactionHitTest || function defaultHitTest(target) {
+      if (!target || typeof target.closest !== 'function') return false;
+      return !!target.closest('g.node[data-node-id]') || !!target.closest('[data-icm-hover-edge-id]');
+    };
+    // Fit 的内容边界:flowchart 的 getBBox 即真实内容边界;sequence 的 SVG 内含
+    // Mermaid 用于文本测量的不可见元素,会把 getBBox 的高度撑到约 2000px,导致
+    // 初始 Fit 把整张图缩得过小。sequence 注入 viewBox 边界(精确包裹可见内容)。
+    const readContentBounds = contentBounds || function defaultContentBounds() {
+      return svgEl.getBBox();
+    };
+    // Fit 的安全区 inset:flowchart 保持零 inset(行为不变);sequence 注入动态
+    // 顶部 inset,让 Fit 避开顶部操作提示条,参与者标题不被压住。
+    const readFitInsets = fitInsets || function defaultFitInsets() {
+      return { top: 0, right: 0, bottom: 0, left: 0 };
+    };
+    // 缩放下限:flowchart 固定 0.15(阅读体验下限);sequence 注入动态下限——
+    // 合同允许的宽图或高图,全图适配倍率可能低于 0.15,固定下限会让 Fit 与
+    // 缩小停在半程。动态下限与 fitToScreen 必须共用同一份内容边界和安全区
+    // (provider 接收 visibleFitArea() 的结果),取「该安全区内的全图适配倍率
+    // 的九成」与 0.15 的较小者,保证 Fit 结果可达成且仍可继续微缩。
+    const readMinScale = function readMinScale(visible) {
+      return minScaleProvider ? minScaleProvider(visible) : 0.15;
+    };
     let tx = 0;
     let ty = 0;
     let scale = 1;
@@ -2469,9 +3151,17 @@ function mapspecToMermaid(spec) {
 
     // 图例固定在画布右下角。Fit 若只按 viewport 尺寸缩放，最末一行节点和标签会
     // 被图例压住；这里把图例上方保留成一条安全阅读带，首次打开和点击 Fit 共用。
+    // 注入的 fitInsets 同时参与收缩（sequence 用它避开顶部操作提示条）。
     function visibleFitArea() {
       const viewportRect = viewportEl.getBoundingClientRect();
-      const base = { left: 0, top: 0, width: viewportEl.clientWidth, height: viewportEl.clientHeight };
+      const insets = readFitInsets();
+      const base = {
+        left: insets.left || 0,
+        top: insets.top || 0,
+        width: viewportEl.clientWidth - (insets.left || 0) - (insets.right || 0),
+        height: viewportEl.clientHeight - (insets.top || 0) - (insets.bottom || 0),
+      };
+      if (base.width <= 0 || base.height <= 0) return { left: 0, top: 0, width: viewportEl.clientWidth, height: viewportEl.clientHeight };
       const legend = document.querySelector('.icm-legend');
       if (!legend || legend.hidden) return base;
       const legendRect = legend.getBoundingClientRect();
@@ -2481,8 +3171,10 @@ function mapspecToMermaid(spec) {
         && legendRect.right > viewportRect.left
         && legendRect.left < viewportRect.right;
       if (!overlapsViewport || legendTop <= 48) return base;
-      const safetyBottom = Math.max(0, legendTop - 12);
-      return { ...base, height: Math.max(48, Math.min(base.height, safetyBottom)) };
+      // legendTop 是底部位置坐标;换算成可用高度必须再减去顶部 inset(base.top),
+      // 否则安全带会向下多延伸一个顶部 inset,底部消息仍可能被图例盖住。
+      const safetyHeight = Math.max(0, legendTop - 12 - base.top);
+      return { ...base, height: Math.max(48, Math.min(base.height, safetyHeight)) };
     }
 
     function apply() {
@@ -2494,7 +3186,7 @@ function mapspecToMermaid(spec) {
       const rect = viewportEl.getBoundingClientRect();
       const px = clientX - rect.left;
       const py = clientY - rect.top;
-      const nextScale = clamp(scale * factor, minScale, maxScale);
+      const nextScale = clamp(scale * factor, readMinScale(visibleFitArea()), maxScale);
       const localX = (px - tx) / scale;
       const localY = (py - ty) / scale;
       tx = px - localX * nextScale;
@@ -2557,8 +3249,7 @@ function mapspecToMermaid(spec) {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       // 让 SVG 节点与关系线元素保留原生 click 序列。若先在 viewport 捕获指针，
       // 浏览器会把 pointerup/click 重定向到 viewport，导致节点首击和关系线钉住失效。
-      if (event.target && typeof event.target.closest === 'function'
-        && (event.target.closest('g.node[data-node-id]') || event.target.closest('[data-icm-hover-edge-id]'))) {
+      if (isInteractiveTarget(event.target)) {
         return;
       }
       blankPointerDown = { x: event.clientX, y: event.clientY };
@@ -2584,7 +3275,7 @@ function mapspecToMermaid(spec) {
       if (pointers.size === 2 && pinch) {
         const metrics = pairMetrics(pointerPair());
         const rect = viewportEl.getBoundingClientRect();
-        const nextScale = clamp(pinch.scale * (metrics.distance / pinch.distance), minScale, maxScale);
+        const nextScale = clamp(pinch.scale * (metrics.distance / pinch.distance), readMinScale(visibleFitArea()), maxScale);
         tx = metrics.x - rect.left - pinch.localX * nextScale;
         ty = metrics.y - rect.top - pinch.localY * nextScale;
         scale = nextScale;
@@ -2607,8 +3298,7 @@ function mapspecToMermaid(spec) {
       const down = blankPointerDown;
       blankPointerDown = null;
       if (!down || pinnedEdgeId === null) return;
-      if (event.target && typeof event.target.closest === 'function'
-        && (event.target.closest('g.node[data-node-id]') || event.target.closest('[data-icm-hover-edge-id]'))) {
+      if (isInteractiveTarget(event.target)) {
         return;
       }
       if (Math.hypot(event.clientX - down.x, event.clientY - down.y) > blankClickDragThresholdPx) return;
@@ -2635,20 +3325,55 @@ function mapspecToMermaid(spec) {
         zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1 / 1.2);
       },
       fitToScreen: function fitToScreen() {
-        const bbox = svgEl.getBBox();
+        const bbox = readContentBounds();
         const visible = visibleFitArea();
         const width = visible.width;
         const height = visible.height;
         if (!bbox.width || !bbox.height || !width || !height) return;
-        scale = clamp(Math.min(width / bbox.width, height / bbox.height) * 0.9, minScale, maxScale);
-        tx = visible.left + (width - bbox.width * scale) / 2 - bbox.x * scale;
+        scale = clamp(Math.min(width / bbox.width, height / bbox.height) * 0.9, readMinScale(visible), maxScale);
+        const scaledWidth = bbox.width * scale;
+        if (scaledWidth <= width) {
+          tx = visible.left + (width - scaledWidth) / 2 - bbox.x * scale;
+        } else {
+          tx = visible.left - bbox.x * scale;
+        }
         ty = visible.top + (height - bbox.height * scale) / 2 - bbox.y * scale;
         apply();
       },
-      focusNode: function focusNode(nodeId, options) {
-        const node = Array.from(svgEl.querySelectorAll('g.node')).find(function matchNode(element) {
-          return element.getAttribute('data-node-id') === nodeId;
-        });
+      // 阅读视图(sequence 首屏默认):宽度适配、顶部对齐——消息文字保持原始
+      // 字号量级,先读开头,后续用平移/滚轮/全图按钮继续。宽图(参与者多)以
+      // 0.75 倍为可读下限(16px 文字缩放后仍 ≥ 12px)。横向:缩放后能放进安全区
+      // 才居中;放不下时从内容左边界开始(保留安全区留白),调用起点与第一条
+      // 消息不被裁出画布,宽出的部分交给向右平移。缩放计算与 Fit 共用同一套
+      // 内容边界与安全区。
+      readView: function readView() {
+        const bbox = readContentBounds();
+        const visible = visibleFitArea();
+        const width = visible.width;
+        if (!bbox.width || !bbox.height || !width || !visible.height) return;
+        const fitByWidth = (width * 0.92) / bbox.width;
+        scale = clamp(Math.max(fitByWidth, 0.75), readMinScale(visible), maxScale);
+        const scaledWidth = bbox.width * scale;
+        if (scaledWidth <= width) {
+          tx = visible.left + (width - scaledWidth) / 2 - bbox.x * scale;
+        } else {
+          tx = visible.left - bbox.x * scale;
+        }
+        ty = visible.top - bbox.y * scale;
+        apply();
+      },
+      focusNode: function focusNode(focusId, options) {
+        // 泛化定位:flowchart 的 g.node 与 sequence 的消息记录/参与者统一挂
+        // data-icm-focus-id;旧行为(按 data-node-id 查节点)保留为回退。
+        let node = null;
+        if (focusId && typeof CSS !== 'undefined' && CSS.escape) {
+          node = svgEl.querySelector('[data-icm-focus-id="' + CSS.escape(String(focusId)) + '"]');
+        }
+        if (!node) {
+          node = Array.from(svgEl.querySelectorAll('g.node')).find(function matchNode(element) {
+            return element.getAttribute('data-node-id') === focusId;
+          }) || null;
+        }
         if (!node) return;
         const viewportRect = viewportEl.getBoundingClientRect();
         const nodeRect = node.getBoundingClientRect();
@@ -3919,6 +4644,7 @@ function mapspecToMermaid(spec) {
     function Toolbar(props) {
       const panZoom = props.panZoom;
       const copy = uiCopyForLocale(props.locale);
+      const hint = props.diagramKind === 'sequence' ? copy.sequenceInteractionHint : copy.interactionHint;
       return h('div', { className: 'icm-controls' },
         h('div', { className: 'icm-toolbar', role: 'toolbar', 'aria-label': copy.graphControls },
           h('button', { type: 'button', onClick: function zoomIn() { panZoom.zoomIn(); }, 'aria-label': copy.zoomIn }, '+'),
@@ -3927,20 +4653,47 @@ function mapspecToMermaid(spec) {
         ),
         h('p', { className: 'icm-interaction-hint' },
           h('span', { className: 'icm-interaction-hint-icon', 'aria-hidden': 'true' }, 'i'),
-          copy.interactionHint,
+          hint,
         ),
       );
     }
 
     function Legend(props) {
       const copy = uiCopyForLocale(props.locale);
-      return h('div', { className: 'icm-legend', role: 'group', 'data-icm-ui-locale': props.locale, 'aria-label': copy.ariaLabel },
-        h('div', { className: 'icm-legend-section', 'aria-label': copy.reading },
-          h('span', { className: 'icm-legend-caption' }, copy.reading),
+      const isSequence = props.diagramKind === 'sequence';
+      const readingKeys = isSequence
+        ? [
+          h('span', { className: 'icm-reading-key group' }, copy.sequenceLegendParticipant),
+          h('span', { className: 'icm-reading-key condition' }, copy.sequenceLegendMessage),
+          h('span', { className: 'icm-reading-key action' }, copy.sequenceLegendFrame),
+        ]
+        : [
           h('span', { className: 'icm-reading-key group' }, copy.group),
           h('span', { className: 'icm-reading-key condition' }, copy.condition),
           h('span', { className: 'icm-reading-key action' }, copy.action),
           h('span', { className: 'icm-reading-key internal' }, copy.internal),
+        ];
+      const operationKeys = isSequence
+        ? [
+          h('span', { className: 'icm-operation-pointer' }, copy.sequenceInteractionHint),
+          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
+          h('kbd', null, 'Tab'), h('span', { className: 'icm-operation-label' }, copy.tabAction),
+          h('kbd', null, 'Enter'), h('span', { className: 'icm-operation-label' }, copy.enterAction),
+          h('kbd', null, 'Esc'), h('span', { className: 'icm-operation-label' }, copy.escapeAction),
+        ]
+        : [
+          h('span', { className: 'icm-operation-pointer' }, copy.interactionHint),
+          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
+          h('span', { className: 'icm-operation-pointer' }, copy.pinAction),
+          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
+          h('kbd', null, 'Tab'), h('span', { className: 'icm-operation-label' }, copy.tabAction),
+          h('kbd', null, 'Enter'), h('span', { className: 'icm-operation-label' }, copy.enterAction),
+          h('kbd', null, 'Esc'), h('span', { className: 'icm-operation-label' }, copy.escapeAction),
+        ];
+      return h('div', { className: 'icm-legend', role: 'group', 'data-icm-ui-locale': props.locale, 'aria-label': copy.ariaLabel },
+        h('div', { className: 'icm-legend-section', 'aria-label': copy.reading },
+          h('span', { className: 'icm-legend-caption' }, copy.reading),
+          readingKeys,
         ),
         h('div', { className: 'icm-legend-section', 'aria-label': copy.evidence },
           h('span', { className: 'icm-legend-caption' }, copy.evidence),
@@ -3950,13 +4703,7 @@ function mapspecToMermaid(spec) {
         ),
         h('div', { className: 'icm-legend-section icm-operation-guide', 'aria-label': copy.controls },
           h('span', { className: 'icm-legend-caption' }, copy.controls),
-          h('span', { className: 'icm-operation-pointer' }, copy.interactionHint),
-          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
-          h('span', { className: 'icm-operation-pointer' }, copy.pinAction),
-          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
-          h('kbd', null, 'Tab'), h('span', { className: 'icm-operation-label' }, copy.tabAction),
-          h('kbd', null, 'Enter'), h('span', { className: 'icm-operation-label' }, copy.enterAction),
-          h('kbd', null, 'Esc'), h('span', { className: 'icm-operation-label' }, copy.escapeAction),
+          operationKeys,
         ),
       );
     }
@@ -4018,9 +4765,12 @@ function mapspecToMermaid(spec) {
       },
         h('h2', null, node.title),
         h('span', { className: 'claim-state ' + node.claimState }, claimStateLabel(props.locale, node.claimState)),
-        h('p', { className: 'icm-summary' }, node.detail.summary),
-        node.detail.segments.length === 0
-          ? h('p', { className: 'icm-empty' }, copy.emptyDetail)
+        // detail 为可空(sequence 参与者/消息不逼人生造内容):缺省时省略摘要
+        // 与段落区域,只保留标题、状态与证据列表;flowchart 节点的 detail 必填,
+        // 行为不变。
+        node.detail ? h('p', { className: 'icm-summary' }, node.detail.summary) : null,
+        !node.detail || node.detail.segments.length === 0
+          ? (node.detail ? h('p', { className: 'icm-empty' }, copy.emptyDetail) : null)
           : node.detail.segments.map(function segmentView(segment, index) {
             return h(SegmentTable, { key: index, segment });
           }),
@@ -4046,10 +4796,16 @@ function mapspecToMermaid(spec) {
       const selectedId = state[0];
       const setSelectedId = state[1];
       const scrollPositions = useRef(new Map());
-      // 图例本身属于本组件。layout effect 执行时它已经进入 DOM；在这里同步 Fit，
-      // 才不会出现页面首帧先按整张画布缩放、随后才避让图例的短暂错误状态。
-      useLayoutEffect(function fitAfterLegendLayout() {
-        props.panZoom.fitToScreen();
+      // 初始视图按图型分流:flowchart 全图概览(Fit);sequence 用阅读视图——
+      // 宽度适配、顶部对齐,消息文字保持可读,后续内容靠平移/滚轮/全图继续。
+      // 图例本身属于本组件。layout effect 执行时它已经进入 DOM；在这里同步初始
+      // 视图，才不会出现页面首帧先按整张画布缩放、随后才避让图例的短暂错误状态。
+      useLayoutEffect(function initialView() {
+        if (props.spec.meta && props.spec.meta.diagramKind === 'sequence') {
+          props.panZoom.readView();
+        } else {
+          props.panZoom.fitToScreen();
+        }
       }, [props.panZoom]);
       useEffect(function subscribeSelection() {
         const unsubscribe = onSelectedChange(setSelectedId);
@@ -4067,13 +4823,12 @@ function mapspecToMermaid(spec) {
           window.cancelAnimationFrame(frameId);
         };
       }, [selectedId, props.panZoom]);
-      const selected = selectedId ? props.spec.nodes.find(function findNode(node) {
-        return node.id === selectedId;
-      }) : null;
+      const selected = selectedId ? findSelectionViewModel(props.spec, selectedId) : null;
       const uiLocale = uiLocaleForSpec(props.spec);
+      const diagramKind = props.spec.meta && props.spec.meta.diagramKind === 'sequence' ? 'sequence' : 'flowchart';
       return h('div', { className: 'icm-overlay' },
-        h(Toolbar, { panZoom: props.panZoom, locale: uiLocale }),
-        h(Legend, { locale: uiLocale }),
+        h(Toolbar, { panZoom: props.panZoom, locale: uiLocale, diagramKind }),
+        h(Legend, { locale: uiLocale, diagramKind }),
         h(DetailPanel, { node: selected, onClose: clearSelection, scrollPositions, locale: uiLocale }),
       );
     }
@@ -4094,6 +4849,18 @@ function mapspecToMermaid(spec) {
     ui.mount(spec, panZoom);
   }
 
+  // App 的选择模型查找:sequence 走渲染层组装的视图模型(participant:<id> /
+  // message:<递归路径>),flowchart 维持按 node.id 查找,行为不变。
+  function findSelectionViewModel(spec, selectedId) {
+    if (spec.meta && spec.meta.diagramKind === 'sequence') {
+      const models = buildSequenceViewModels(spec);
+      return models.get(selectedId) || null;
+    }
+    return spec.nodes.find(function findNode(node) {
+      return node.id === selectedId;
+    }) || null;
+  }
+
   async function main() {
     const spec = window.__ICM_MAPSPEC__;
     const depsConfig = window.__ICM_DEPS_CONFIG__;
@@ -4102,6 +4869,72 @@ function mapspecToMermaid(spec) {
       const viewport = document.getElementById('graph-viewport');
       const canvas = document.getElementById('graph-canvas');
       if (!viewport || !canvas) throw new Error('缺少图谱视口或画布');
+      const isSequence = !!spec && !!spec.meta && spec.meta.diagramKind === 'sequence';
+      if (isSequence) {
+        const svgEl = await renderSequenceGraph(spec, canvas);
+        annotateSequenceDiagram(svgEl, spec);
+        // 泛化命中判断:命中消息记录与参与者时跳过指针捕获,保留原生 click。
+        const panZoom = createPanZoom(viewport, canvas, svgEl, function sequenceHitTest(target) {
+          if (!target || typeof target.closest !== 'function') return false;
+          return !!target.closest('[data-icm-focus-id]');
+        }, function sequenceContentBounds() {
+          // Mermaid 的 sequence SVG 内含不可见测量元素,裸 getBBox 的高度会被撑到
+          // 约 2000px;viewBox 精确包裹可见内容,作为 Fit 的内容边界(异常时回退)。
+          try {
+            const view = svgEl.viewBox && svgEl.viewBox.baseVal;
+            if (view && view.width > 0 && view.height > 0) {
+              return { x: view.x, y: view.y, width: view.width, height: view.height };
+            }
+          } catch {
+            // viewBox 不可用时回退 getBBox。
+          }
+          return svgEl.getBBox();
+        }, function sequenceFitInsets() {
+          // 初始 Fit 与点击 Fit 都要避开顶部操作提示条:按控件实际底边动态测量,
+          // 并保留 12px 间距,否则参与者标题会落在提示条区域内。
+          const controls = document.querySelector('.icm-controls');
+          if (!controls) return { top: 0, right: 0, bottom: 0, left: 0 };
+          const bottom = controls.getBoundingClientRect().bottom - viewport.getBoundingClientRect().top;
+          return { top: Math.max(0, bottom + 12), right: 0, bottom: 0, left: 0 };
+        }, function sequenceMinScale(visible) {
+          // 宽图或高图的全图适配倍率可能低于 0.15。visible 与 fitToScreen 使用
+          // 的安全区是同一份计算(顶部控件 + 底部图例之后),保证下限不大于
+          // Fit 实际达成的倍率——高图由扣除覆盖层后的高度决定,宽图由宽度决定。
+          try {
+            const view = svgEl.viewBox && svgEl.viewBox.baseVal;
+            if (view && view.width > 0 && view.height > 0 && visible.height > 0 && visible.width > 0) {
+              const fitScale = Math.min(visible.width / view.width, visible.height / view.height) * 0.9;
+              return Math.min(0.15, fitScale * 0.9);
+            }
+          } catch {
+            // viewBox 不可用时保持固定下限。
+          }
+          return 0.15;
+        });
+        window.interactiveCodeMap = {
+          panZoom,
+          spec,
+          svgEl,
+          diagramKind: 'sequence',
+          // 自检合同:消息线与序号数量都必须等于递归展开后的声明条数——
+          // 消息线是每条消息恰好一个的稳定锚点,序号断言防渲染静默失败与
+          // 指令注入关闭编号。
+          verifySequenceMapping: function verifySequenceMapping() {
+            const lineCount = svgEl.querySelectorAll('.messageLine0, .messageLine1').length;
+            const numberCount = svgEl.querySelectorAll('text.sequenceNumber').length;
+            const declared = sequenceMessagesInOrder(spec).length;
+            return {
+              diagramKind: 'sequence',
+              messageLineCount: lineCount,
+              sequenceNumberCount: numberCount,
+              declaredMessageCount: declared,
+              ok: lineCount === declared && numberCount === declared,
+            };
+          },
+        };
+        mountReact(spec, panZoom);
+        return;
+      }
       const svgEl = await renderGraph(spec, canvas);
       applySubgraphTones(svgEl, spec);
       bindNodeEvents(svgEl, spec);
@@ -4115,6 +4948,7 @@ function mapspecToMermaid(spec) {
         },
         spec,
         svgEl,
+        diagramKind: 'flowchart',
       };
       reconnectHandoffPathsToNodes(svgEl, spec);
       detectAndRepairSubgraphTitles(svgEl);

@@ -219,6 +219,32 @@ console.log('\n== 已提交的双语 demo ==');
   assert(checkedInEnglishDemoHtml.includes('<link rel="canonical" href="https://yulaiz.github.io/interactive-code-map/en/">'), '已提交英文 HTML 携带对应线上 canonical');
   assert(englishDemoHtml === checkedInEnglishDemoHtml, '已提交英文 HTML 可由当前 renderer 无漂移重建');
   assert(chineseDemoHtml === checkedInChineseDemoHtml, '已提交中文 HTML 可由当前 renderer 无漂移重建');
+
+  // sequence 双语 demo:同一示例源码的时序视图,子路径 canonical,产物无漂移。
+  const englishSequenceSpec = JSON.parse(readFileSync(
+    path.join(repoRoot, 'examples', 'demo', 'expected-mapspec.sequence.json'),
+    'utf8',
+  ));
+  const chineseSequenceSpec = JSON.parse(readFileSync(
+    path.join(repoRoot, 'examples', 'demo', 'expected-mapspec.sequence.zh-CN.json'),
+    'utf8',
+  ));
+  const englishSequenceHtml = renderHtml(englishSequenceSpec, { repoRoot: demoRepoRoot, cdnProfile: 'global', canonicalUrl: 'https://yulaiz.github.io/interactive-code-map/en/sequence/' });
+  const chineseSequenceHtml = renderHtml(chineseSequenceSpec, { repoRoot: demoRepoRoot, cdnProfile: 'china-friendly', canonicalUrl: 'https://yulaiz.github.io/interactive-code-map/zh-CN/sequence/' });
+  const checkedInEnglishSequenceHtml = readFileSync(
+    path.join(repoRoot, 'examples', 'demo', 'expected-output.sequence.html'),
+    'utf8',
+  );
+  const checkedInChineseSequenceHtml = readFileSync(
+    path.join(repoRoot, 'examples', 'demo', 'expected-output.sequence.zh-CN.html'),
+    'utf8',
+  );
+  assert(englishSequenceSpec.meta.diagramKind === 'sequence' && chineseSequenceSpec.meta.diagramKind === 'sequence', '时序 demo 显式声明 diagramKind=sequence');
+  assert(checkedInEnglishSequenceHtml.includes('<link rel="canonical" href="https://yulaiz.github.io/interactive-code-map/en/sequence/">'), '已提交英文时序 HTML 携带子路径 canonical');
+  assert(checkedInChineseSequenceHtml.includes('<link rel="canonical" href="https://yulaiz.github.io/interactive-code-map/zh-CN/sequence/">'), '已提交中文时序 HTML 携带子路径 canonical');
+  assert(checkedInChineseSequenceHtml.includes('registry.npmmirror.com/react/18.3.1/files/umd/react.production.min.js'), '已提交中文时序 HTML 使用 npmmirror 首源');
+  assert(englishSequenceHtml === checkedInEnglishSequenceHtml, '已提交英文时序 HTML 可由当前 renderer 无漂移重建');
+  assert(chineseSequenceHtml === checkedInChineseSequenceHtml, '已提交中文时序 HTML 可由当前 renderer 无漂移重建');
 }
 
 console.log('\n== </script> 注入防护 ==');
@@ -463,6 +489,154 @@ console.log('\n== 敏感二次扫描 ==');
     writeEvidenceFile(tmp);
     const html = renderHtml(baseSpec(), { repoRoot: tmp });
     assert(html.length > 0, '正常 spec 的二次扫描通过');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n== sequence 产物构建与内联清单 ==');
+{
+  const tmp = mkdtempSync(path.join(tmpdir(), 'icm-seq-'));
+  try {
+    writeFileSync(path.join(tmp, 'evidence.txt'), 'l1\nl2\nl3\n');
+    const sequenceSpec = {
+      schemaVersion: 1,
+      meta: {
+        title: 'seq',
+        question: 'q',
+        scope: 's',
+        languageProfile: 'js',
+        summary: 'a',
+        uiLocale: 'en',
+        diagramKind: 'sequence',
+      },
+      participants: [
+        { id: 'end', title: 'Gateway', claimState: 'verified', evidence: [{ path: 'evidence.txt', lineStart: 1, lineEnd: 2, state: 'verified' }] },
+        { id: 'a', title: 'Ledger', claimState: 'inferred', evidence: [{ path: 'ghost.js', state: 'inferred' }] },
+      ],
+      messages: [
+        { from: 'end', to: 'a', label: 'Post entry', claimState: 'verified', evidence: [{ path: 'evidence.txt', lineStart: 1, lineEnd: 2, state: 'verified' }], activation: { activatesTo: true } },
+        {
+          frame: true,
+          kind: 'loop',
+          label: 'RetryBudgetExhaustionCheck',
+          messages: [
+            { from: 'a', to: 'end', label: 'Receipt', arrowKind: 'dashed', claimState: 'inferred', evidence: [{ path: 'ghost.js', state: 'inferred' }] },
+          ],
+        },
+        { from: 'a', to: 'end', label: 'Wrap: retry $$x$$ 50%', claimState: 'inferred', evidence: [{ path: 'ghost.js', state: 'inferred' }], activation: { deactivatesFrom: true } },
+      ],
+    };
+    const html = renderHtml(sequenceSpec, { repoRoot: tmp });
+    assert(html.includes('"diagramKind":"sequence"'), 'sequence MapSpec 完整内联');
+    // 内联清单:新模块必须显式进入产物(stripModuleSyntax 后为普通函数声明)。
+    assert(html.includes('function encodeSequenceLiteralText'), 'sequence 编码器进入内联清单');
+    assert(html.includes('function assertSequenceFrameConditionText'), 'sequence 帧条件断言进入内联清单');
+    assert(html.includes('function mapspecToMermaidSequence'), 'sequence DSL 生成器进入内联清单');
+    assert(html.includes('function sequenceMessagesInOrder'), '递归展开辅助进入内联清单');
+    assert(html.includes('verifySequenceMapping'), 'sequence 自检 API 进入产物');
+    assert(html.includes('sequenceInteractionHint'), 'sequence 固定 UI 文案进入产物');
+    assert(html.includes('.icm-sequence-state-dot'), 'sequence 样式进入产物');
+    // 最终内联 renderer 脚本可解析(以 sequence 产物为准,不只查 flowchart 产物)。
+    const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]);
+    const rendererScript = scripts.at(-1);
+    let parseError = null;
+    try {
+      new Function(rendererScript);
+    } catch (error) {
+      parseError = error;
+    }
+    assert(typeof rendererScript === 'string' && !parseError, `sequence 产物的内联脚本可解析${parseError ? `: ${parseError.message}` : ''}`);
+    assert(rendererScript.includes('function mapspecToMermaidSequence'), '内联脚本中含 sequence 生成器(顺序在 render.js 之前)');
+
+    // 字面文本合同进入 MapSpec JSON:特殊字符原文完整保留在产物中。
+    assert(html.includes('Wrap: retry $$x$$ 50%'), '消息 label 原文完整内联(未在数据层转义)');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n== sequence 软限提示(非错误)与互斥校验 ==');
+{
+  const tmp = mkdtempSync(path.join(tmpdir(), 'icm-seq-soft-'));
+  try {
+    writeFileSync(path.join(tmp, 'evidence.txt'), 'l1\nl2\n');
+    const participant = { id: 'a', title: 'A', claimState: 'verified', evidence: [{ path: 'evidence.txt', lineStart: 1, lineEnd: 2, state: 'verified' }] };
+    const message = (label, extra = {}) => ({
+      from: 'a', to: 'a', label, claimState: 'verified',
+      evidence: [{ path: 'evidence.txt', lineStart: 1, lineEnd: 2, state: 'verified' }], ...extra,
+    });
+    const overSoft = {
+      schemaVersion: 1,
+      meta: { title: 't', question: 'q', scope: 's', languageProfile: 'js', summary: 'a', diagramKind: 'sequence' },
+      participants: [participant],
+      messages: Array.from({ length: 31 }, (_unused, index) => message('m' + index)),
+    };
+    const warnings = [];
+    const originalWarn = console.warn;
+    console.warn = (value) => warnings.push(String(value));
+    try {
+      renderHtml(overSoft, { repoRoot: tmp });
+    } finally {
+      console.warn = originalWarn;
+    }
+    assert(warnings.some((w) => w.includes('软限 30')), '消息总数超软限 31 条 → 提示输出且生成不拒绝');
+
+    const overHard = {
+      schemaVersion: 1,
+      meta: { title: 't', question: 'q', scope: 's', languageProfile: 'js', summary: 'a', diagramKind: 'sequence' },
+      participants: [participant],
+      messages: Array.from({ length: 61 }, (_unused, index) => message('m' + index)),
+    };
+    let rejected = false;
+    try {
+      renderHtml(overHard, { repoRoot: tmp });
+    } catch (error) {
+      rejected = error.message.includes('超过硬上限 60');
+    }
+    assert(rejected, '消息总数超硬限 61 条 → 校验拒绝');
+
+    const mixed = baseSpec();
+    mixed.participants = [participant];
+    let mixedRejected = false;
+    try {
+      renderHtml(mixed, { repoRoot: tmp });
+    } catch (error) {
+      mixedRejected = error.message.includes('仅 diagramKind=sequence 有效');
+    }
+    assert(mixedRejected, 'flowchart MapSpec 携带 participants → 校验拒绝');
+
+    // 构建入口同样拒绝运行时类型非法输入:activation 布尔与帧条件字符串。
+    const badActivation = JSON.parse(JSON.stringify({
+      schemaVersion: 1,
+      meta: { title: 't', question: 'q', scope: 's', languageProfile: 'js', summary: 'a', diagramKind: 'sequence' },
+      participants: [
+        { id: 'end', title: 'Gateway', claimState: 'verified', evidence: [{ path: 'evidence.txt', lineStart: 1, lineEnd: 2, state: 'verified' }] },
+      ],
+      messages: [{ from: 'end', to: 'end', label: 'call', claimState: 'verified', evidence: [{ path: 'evidence.txt', lineStart: 1, lineEnd: 2, state: 'verified' }], activation: { activatesTo: 'true' } }],
+    }));
+    let activationRejected = false;
+    try {
+      renderHtml(badActivation, { repoRoot: tmp });
+    } catch (error) {
+      activationRejected = error.message.includes('必须为布尔值');
+    }
+    assert(activationRejected, 'activation.activatesTo 为字符串 → 构建入口拒绝');
+
+    const badFrameCondition = JSON.parse(JSON.stringify(badActivation));
+    badFrameCondition.messages = [{
+      frame: true,
+      kind: 'loop',
+      label: 123,
+      messages: [{ from: 'end', to: 'end', label: 'call', claimState: 'verified', evidence: [{ path: 'evidence.txt', lineStart: 1, lineEnd: 2, state: 'verified' }] }],
+    }];
+    let frameRejected = false;
+    try {
+      renderHtml(badFrameCondition, { repoRoot: tmp });
+    } catch (error) {
+      frameRejected = error.message.includes('必须为字符串');
+    }
+    assert(frameRejected, '帧条件为数字 → 构建入口拒绝');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

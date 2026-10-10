@@ -42,6 +42,9 @@
   let hoveredEdgeId = null;
   let lastFocusedNodeEl = null;
   let boundNodeElements = [];
+  // sequence 交互命中判断注入 createPanZoom：命中消息记录与参与者元素时跳过
+  // 指针捕获，保留原生 click；flowchart 传默认判断，行为不变。
+  let sequenceInteractionHitTest = null;
   let reactRoot = null;
   const selectedListeners = new Set();
 
@@ -60,6 +63,7 @@
     selectedNodeId = id;
     if (nodeEl) lastFocusedNodeEl = nodeEl;
     syncSelectedNodeAttributes();
+    syncSelectedSequenceAttributes();
     notifySelection(id);
   }
 
@@ -74,6 +78,7 @@
     const previous = lastFocusedNodeEl;
     selectedNodeId = null;
     syncSelectedNodeAttributes();
+    syncSelectedSequenceAttributes();
     notifySelection(null);
     if (previous && typeof previous.focus === 'function') previous.focus();
   }
@@ -161,7 +166,7 @@
     }
   }
 
-  async function renderGraph(spec, container) {
+  function initializeMermaid() {
     if (!window.mermaid) throw new Error('Mermaid 依赖尚未加载');
     window.mermaid.initialize({
       startOnLoad: false,
@@ -176,7 +181,17 @@
         // 不依赖后续移动 SVG 元素来换取间距。
         subGraphTitleMargin: { top: 10, bottom: 52 },
       },
+      // sequence 独立渲染链:useMaxWidth:false 下输出显式
+      // width/height + viewBox,与 panzoom 方案兼容;关闭默认的底部镜像参与者。
+      sequence: {
+        useMaxWidth: false,
+        mirrorActors: false,
+      },
     });
+  }
+
+  async function renderGraph(spec, container) {
+    initializeMermaid();
     const rendered = await window.mermaid.render('icm-graph', mapspecToMermaid(spec));
     container.innerHTML = rendered.svg;
     const svg = container.querySelector('svg');
@@ -186,6 +201,19 @@
     svg.setAttribute('data-icm-ui-locale', uiLocaleForSpec(spec));
     const hasLayoutBands = Array.isArray(spec.meta.layoutBands) && spec.meta.layoutBands.length > 0;
     svg.setAttribute('data-icm-stage-layout', hasLayoutBands ? 'banded' : (spec.meta.layoutDirection === 'LR' ? 'lr' : 'td'));
+    return svg;
+  }
+
+  async function renderSequenceGraph(spec, container) {
+    initializeMermaid();
+    const rendered = await window.mermaid.render('icm-graph', mapspecToMermaidSequence(spec));
+    container.innerHTML = rendered.svg;
+    const svg = container.querySelector('svg');
+    if (!svg) throw new Error('Mermaid 未生成 SVG');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', spec.meta.title);
+    svg.setAttribute('data-icm-ui-locale', uiLocaleForSpec(spec));
+    svg.setAttribute('data-icm-diagram-kind', 'sequence');
     return svg;
   }
 
@@ -215,6 +243,11 @@
         ariaLabel: '图谱阅读说明、证据状态与操作图例', reading: '阅读说明', group: '分组',
         condition: '条件', action: '动作关系', internal: '组内关系', evidence: '证据状态',
         verified: '已验证', inferred: '推断', unconfirmed: '待确认', emptyDetail: '暂无更多详情。',
+        // sequence 时序图专属文案:图例语境由「节点/关系线」换为「消息/参与者」。
+        sequenceInteractionHint: '点击消息或参与者查看详情',
+        sequenceLegendParticipant: '参与者', sequenceLegendMessage: '消息', sequenceLegendFrame: '帧（循环/条件/分支）',
+        sequenceParticipantHoverTitle: '点击查看该参与者的证据详情',
+        sequenceMessageHoverTitle: '点击查看该消息的证据详情',
       };
     }
     return {
@@ -225,6 +258,11 @@
       ariaLabel: 'Graph reading guide, evidence status, and controls', reading: 'Reading guide', group: 'Group',
       condition: 'Condition', action: 'Action relationship', internal: 'Internal relationship', evidence: 'Evidence status',
       verified: 'verified', inferred: 'inferred', unconfirmed: 'unconfirmed', emptyDetail: 'No further details.',
+      // Sequence-specific copy: the legend speaks of messages/participants instead of nodes/lines.
+      sequenceInteractionHint: 'Click a message or participant for details',
+      sequenceLegendParticipant: 'Participant', sequenceLegendMessage: 'Message', sequenceLegendFrame: 'Frame (loop/condition/branch)',
+      sequenceParticipantHoverTitle: 'Click for evidence details of this participant',
+      sequenceMessageHoverTitle: 'Click for evidence details of this message',
     };
   }
 
@@ -322,6 +360,8 @@
       const node = nodesById.get(nodeId);
       boundNodeElements.push(nodeElement);
       nodeElement.setAttribute('data-node-id', nodeId);
+      // focusNode 的泛化定位标记:flowchart 节点与 sequence 记录/参与者共用。
+      nodeElement.setAttribute('data-icm-focus-id', nodeId);
       nodeElement.setAttribute('data-claim-state', node.claimState);
       nodeElement.setAttribute('tabindex', '0');
       nodeElement.setAttribute('role', 'button');
@@ -1226,7 +1266,256 @@
     }
   }
 
-  function createPanZoom(viewportEl, canvasEl, svgEl) {
+  // ===================== sequence(diagramKind=sequence)独立增强层 =====================
+  // 与 flowchart 的布线、foreignObject 修复和关系线钉住逻辑无交集。映射单位是
+  // 「消息记录」——每条消息在文档序中的连续块(文本集合 → 消息线 → 序号);锚点
+  // 是每条消息恰好一条的 .messageLine0/.messageLine1,不以 text.messageText 计数
+  // (Mermaid 会把多行消息文本渲染为多个 text 节点,文本计数会错位)。Mermaid
+  // 11.16.1 的 DOM 归属已在实施时逐项探测锁定:参与者容器为
+  // g[data-id="icm_pN"],帧条件为 text.loopText,else 条件为 text.sectionTitle,
+  // 帧关键字为 text.labelText。
+
+  const SEQUENCE_MESSAGE_TITLE_MAX_CODE_POINTS = 120;
+  let boundSequenceElements = [];
+
+  function sequenceParticipantTitle(spec, participantId) {
+    const participants = Array.isArray(spec.participants) ? spec.participants : [];
+    const found = participants.find(function matchesId(participant) {
+      return participant && participant.id === participantId;
+    });
+    return found ? found.title : participantId;
+  }
+
+  function truncateSequenceTitle(text) {
+    const codePoints = Array.from(text);
+    return codePoints.length > SEQUENCE_MESSAGE_TITLE_MAX_CODE_POINTS
+      ? codePoints.slice(0, SEQUENCE_MESSAGE_TITLE_MAX_CODE_POINTS).join('') + '…'
+      : text;
+  }
+
+  function sequenceMessageTitle(record, index, spec) {
+    const message = record.message;
+    const text = '#' + (index + 1) + ' '
+      + sequenceParticipantTitle(spec, message.from) + ' → '
+      + sequenceParticipantTitle(spec, message.to) + ': '
+      + (message.label || '');
+    return truncateSequenceTitle(text);
+  }
+
+  function collectSequenceMessageRecords(svgEl) {
+    // 每条消息恰有一条线(合同:label 单行)。以线为锚点,按文档序把它前面的
+    // 文本集合与后面的序号聚合为同一条消息记录的连续块。
+    const elements = svgEl.querySelectorAll('.messageLine0, .messageLine1, text.messageText, text.sequenceNumber');
+    const records = [];
+    let current = null;
+    let pendingTexts = [];
+    for (const el of elements) {
+      const cls = el.getAttribute('class') || '';
+      if (cls.indexOf('messageLine0') >= 0 || cls.indexOf('messageLine1') >= 0) {
+        current = { line: el, texts: pendingTexts, number: null };
+        pendingTexts = [];
+        records.push(current);
+      } else if (cls.indexOf('messageText') >= 0) {
+        pendingTexts.push(el);
+      } else if (current) {
+        current.number = el;
+      }
+    }
+    return records;
+  }
+
+  function buildSequenceMessageRecords(svgEl, spec) {
+    const records = collectSequenceMessageRecords(svgEl);
+    const declared = sequenceMessagesInOrder(spec);
+    if (records.length !== declared.length) {
+      throw new Error('sequence 消息记录数 ' + records.length
+        + ' 与声明条数 ' + declared.length + ' 不一致,映射中止');
+    }
+    return records.map(function pairRecord(record, index) {
+      return {
+        line: record.line,
+        texts: record.texts,
+        number: record.number,
+        key: declared[index].key,
+        message: declared[index].message,
+      };
+    });
+  }
+
+  // 状态点与 flowchart 节点左上角状态点同一套三态色与语义;position 决定落在
+  // 消息文本左侧还是参与者框左上角。坐标用 getBBox(锚元素局部坐标系)。
+  function addSequenceStateDot(anchorElement, claimState, locale, position) {
+    const container = anchorElement.parentNode;
+    if (!container) return;
+    const box = anchorElement.getBBox();
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.classList.add('icm-sequence-state-dot', 'icm-node-evidence-' + claimState);
+    dot.setAttribute('data-claim-state', claimState);
+    dot.setAttribute('cx', String(position === 'top-left' ? box.x + 9 : box.x - 10));
+    dot.setAttribute('cy', String(position === 'top-left' ? box.y + 9 : box.y + box.height / 2));
+    dot.setAttribute('r', '4.5');
+    dot.setAttribute('aria-hidden', 'true');
+    dot.setAttribute('pointer-events', 'none');
+    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    title.textContent = claimStateLabel(locale, claimState);
+    dot.appendChild(title);
+    container.appendChild(dot);
+  }
+
+  function bindSequenceParticipants(svgEl, spec, locale) {
+    const participants = Array.isArray(spec.participants) ? spec.participants : [];
+    const byInternalId = new Map();
+    participants.forEach(function mapParticipant(participant, index) {
+      byInternalId.set('icm_p' + (index + 1), participant);
+    });
+    const participantHoverCopy = uiCopyForLocale(locale).sequenceParticipantHoverTitle;
+    for (const groupEl of svgEl.querySelectorAll('g[data-id]')) {
+      const participant = byInternalId.get(groupEl.getAttribute('data-id'));
+      if (!participant) continue;
+      const selectionKey = 'participant:' + participant.id;
+      groupEl.setAttribute('data-icm-participant-id', participant.id);
+      groupEl.setAttribute('data-icm-focus-id', selectionKey);
+      groupEl.setAttribute('data-claim-state', participant.claimState);
+      groupEl.classList.add('icm-state-' + participant.claimState, 'icm-sequence-interactive');
+      groupEl.setAttribute('tabindex', '0');
+      groupEl.setAttribute('role', 'button');
+      groupEl.setAttribute('aria-label', participant.title + ' — ' + claimStateLabel(locale, participant.claimState));
+      groupEl.setAttribute('aria-pressed', 'false');
+      const frameEl = groupEl.querySelector('rect.actor');
+      const titleEl = groupEl.querySelector('text.actor');
+      if (frameEl) frameEl.setAttribute('title', participantHoverCopy);
+      if (titleEl) titleEl.setAttribute('title', participantHoverCopy);
+      groupEl.addEventListener('click', function onParticipantClick() {
+        setSelected(selectionKey, groupEl);
+      });
+      groupEl.addEventListener('keydown', function onParticipantKeydown(event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          setSelected(selectionKey, groupEl);
+        }
+      });
+      boundSequenceElements.push(groupEl);
+      if (frameEl) addSequenceStateDot(frameEl, participant.claimState, locale, 'top-left');
+    }
+  }
+
+  function bindSequenceRecordEvents(svgEl, spec, records, locale) {
+    const messageHoverCopy = uiCopyForLocale(locale).sequenceMessageHoverTitle;
+    for (let index = 0; index < records.length; index += 1) {
+      const record = records[index];
+      const selectionKey = 'message:' + record.key;
+      const ariaTitle = sequenceMessageTitle(record, index, spec)
+        + ' — ' + claimStateLabel(locale, record.message.claimState);
+      const targets = [record.line, record.number].concat(record.texts);
+      for (const el of targets) {
+        if (!el) continue;
+        el.setAttribute('data-icm-message-key', record.key);
+        el.setAttribute('data-icm-focus-id', selectionKey);
+        el.setAttribute('data-claim-state', record.message.claimState);
+        el.classList.add('icm-state-' + record.message.claimState, 'icm-sequence-interactive');
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('role', 'button');
+        el.setAttribute('aria-label', ariaTitle);
+        el.setAttribute('aria-pressed', 'false');
+        el.setAttribute('title', messageHoverCopy);
+        el.addEventListener('click', function onMessageClick() {
+          setSelected(selectionKey, record.line);
+        });
+        el.addEventListener('keydown', function onMessageKeydown(event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setSelected(selectionKey, record.line);
+          }
+        });
+        boundSequenceElements.push(el);
+      }
+      if (record.texts.length > 0) {
+        addSequenceStateDot(record.texts[0], record.message.claimState, locale, 'before-text');
+      }
+    }
+  }
+
+  // 选中反馈替代时序版钉住:单选中,点击消息/参与者打开面板并高亮其记录
+  // (文本、线、序号),关闭面板或 Esc 经 clearSelection 清除。
+  function syncSelectedSequenceAttributes() {
+    for (const el of boundSequenceElements) {
+      const isSelected = selectedNodeId !== null
+        && el.getAttribute('data-icm-focus-id') === selectedNodeId;
+      el.classList.toggle('icm-sequence-selected', isSelected);
+      if (el.getAttribute('role') === 'button') {
+        el.setAttribute('aria-pressed', String(isSelected));
+      }
+    }
+  }
+
+  function annotateSequenceDiagram(svgEl, spec) {
+    const locale = uiLocaleForSpec(spec);
+    const records = buildSequenceMessageRecords(svgEl, spec);
+    boundSequenceElements = [];
+    bindSequenceParticipants(svgEl, spec, locale);
+    bindSequenceRecordEvents(svgEl, spec, records, locale);
+  }
+
+  // 详情视图模型适配:sequence 没有 nodes,DetailPanel 消费的选择模型在渲染层
+  // 组装;detail 缺省时视图模型置 null,面板只展示标题、状态与证据。
+  function buildSequenceViewModels(spec) {
+    const models = new Map();
+    const participants = Array.isArray(spec.participants) ? spec.participants : [];
+    for (const participant of participants) {
+      models.set('participant:' + participant.id, {
+        id: 'participant:' + participant.id,
+        title: participant.title,
+        claimState: participant.claimState,
+        evidence: participant.evidence,
+        detail: participant.detail || null,
+      });
+    }
+    const declared = sequenceMessagesInOrder(spec);
+    declared.forEach(function mapMessage(entry, index) {
+      const message = entry.message;
+      const text = '#' + (index + 1) + ' '
+        + sequenceParticipantTitle(spec, message.from) + ' → '
+        + sequenceParticipantTitle(spec, message.to) + ': '
+        + (message.label || '');
+      models.set('message:' + entry.key, {
+        id: 'message:' + entry.key,
+        title: truncateSequenceTitle(text),
+        claimState: message.claimState,
+        evidence: message.evidence,
+        detail: message.detail || null,
+      });
+    });
+    return models;
+  }
+
+  function createPanZoom(viewportEl, canvasEl, svgEl, interactionHitTest, contentBounds, fitInsets, minScaleProvider) {
+    // 交互命中判断:命中时跳过指针捕获,保留交互元素的原生 click 序列。
+    // flowchart 用默认判断(节点卡片 + 关系线悬停组),sequence 注入消息记录
+    // 与参与者元素;若先在 viewport 捕获指针,浏览器会把 pointerup/click
+    // 重定向到 viewport,导致节点首击与关系线钉住失效(同一根因)。
+    const isInteractiveTarget = interactionHitTest || function defaultHitTest(target) {
+      if (!target || typeof target.closest !== 'function') return false;
+      return !!target.closest('g.node[data-node-id]') || !!target.closest('[data-icm-hover-edge-id]');
+    };
+    // Fit 的内容边界:flowchart 的 getBBox 即真实内容边界;sequence 的 SVG 内含
+    // Mermaid 用于文本测量的不可见元素,会把 getBBox 的高度撑到约 2000px,导致
+    // 初始 Fit 把整张图缩得过小。sequence 注入 viewBox 边界(精确包裹可见内容)。
+    const readContentBounds = contentBounds || function defaultContentBounds() {
+      return svgEl.getBBox();
+    };
+    // Fit 的安全区 inset:flowchart 保持零 inset(行为不变);sequence 注入动态
+    // 顶部 inset,让 Fit 避开顶部操作提示条,参与者标题不被压住。
+    const readFitInsets = fitInsets || function defaultFitInsets() {
+      return { top: 0, right: 0, bottom: 0, left: 0 };
+    };
+    // 缩放下限:flowchart 固定 0.15(阅读体验下限);sequence 注入动态下限——
+    // 合同允许的宽图或高图,全图适配倍率可能低于 0.15,固定下限会让 Fit 与
+    // 缩小停在半程。动态下限与 fitToScreen 必须共用同一份内容边界和安全区
+    // (provider 接收 visibleFitArea() 的结果),取「该安全区内的全图适配倍率
+    // 的九成」与 0.15 的较小者,保证 Fit 结果可达成且仍可继续微缩。
+    const readMinScale = function readMinScale(visible) {
+      return minScaleProvider ? minScaleProvider(visible) : 0.15;
+    };
     let tx = 0;
     let ty = 0;
     let scale = 1;
@@ -1244,9 +1533,17 @@
 
     // 图例固定在画布右下角。Fit 若只按 viewport 尺寸缩放，最末一行节点和标签会
     // 被图例压住；这里把图例上方保留成一条安全阅读带，首次打开和点击 Fit 共用。
+    // 注入的 fitInsets 同时参与收缩（sequence 用它避开顶部操作提示条）。
     function visibleFitArea() {
       const viewportRect = viewportEl.getBoundingClientRect();
-      const base = { left: 0, top: 0, width: viewportEl.clientWidth, height: viewportEl.clientHeight };
+      const insets = readFitInsets();
+      const base = {
+        left: insets.left || 0,
+        top: insets.top || 0,
+        width: viewportEl.clientWidth - (insets.left || 0) - (insets.right || 0),
+        height: viewportEl.clientHeight - (insets.top || 0) - (insets.bottom || 0),
+      };
+      if (base.width <= 0 || base.height <= 0) return { left: 0, top: 0, width: viewportEl.clientWidth, height: viewportEl.clientHeight };
       const legend = document.querySelector('.icm-legend');
       if (!legend || legend.hidden) return base;
       const legendRect = legend.getBoundingClientRect();
@@ -1256,8 +1553,10 @@
         && legendRect.right > viewportRect.left
         && legendRect.left < viewportRect.right;
       if (!overlapsViewport || legendTop <= 48) return base;
-      const safetyBottom = Math.max(0, legendTop - 12);
-      return { ...base, height: Math.max(48, Math.min(base.height, safetyBottom)) };
+      // legendTop 是底部位置坐标;换算成可用高度必须再减去顶部 inset(base.top),
+      // 否则安全带会向下多延伸一个顶部 inset,底部消息仍可能被图例盖住。
+      const safetyHeight = Math.max(0, legendTop - 12 - base.top);
+      return { ...base, height: Math.max(48, Math.min(base.height, safetyHeight)) };
     }
 
     function apply() {
@@ -1269,7 +1568,7 @@
       const rect = viewportEl.getBoundingClientRect();
       const px = clientX - rect.left;
       const py = clientY - rect.top;
-      const nextScale = clamp(scale * factor, minScale, maxScale);
+      const nextScale = clamp(scale * factor, readMinScale(visibleFitArea()), maxScale);
       const localX = (px - tx) / scale;
       const localY = (py - ty) / scale;
       tx = px - localX * nextScale;
@@ -1332,8 +1631,7 @@
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       // 让 SVG 节点与关系线元素保留原生 click 序列。若先在 viewport 捕获指针，
       // 浏览器会把 pointerup/click 重定向到 viewport，导致节点首击和关系线钉住失效。
-      if (event.target && typeof event.target.closest === 'function'
-        && (event.target.closest('g.node[data-node-id]') || event.target.closest('[data-icm-hover-edge-id]'))) {
+      if (isInteractiveTarget(event.target)) {
         return;
       }
       blankPointerDown = { x: event.clientX, y: event.clientY };
@@ -1359,7 +1657,7 @@
       if (pointers.size === 2 && pinch) {
         const metrics = pairMetrics(pointerPair());
         const rect = viewportEl.getBoundingClientRect();
-        const nextScale = clamp(pinch.scale * (metrics.distance / pinch.distance), minScale, maxScale);
+        const nextScale = clamp(pinch.scale * (metrics.distance / pinch.distance), readMinScale(visibleFitArea()), maxScale);
         tx = metrics.x - rect.left - pinch.localX * nextScale;
         ty = metrics.y - rect.top - pinch.localY * nextScale;
         scale = nextScale;
@@ -1382,8 +1680,7 @@
       const down = blankPointerDown;
       blankPointerDown = null;
       if (!down || pinnedEdgeId === null) return;
-      if (event.target && typeof event.target.closest === 'function'
-        && (event.target.closest('g.node[data-node-id]') || event.target.closest('[data-icm-hover-edge-id]'))) {
+      if (isInteractiveTarget(event.target)) {
         return;
       }
       if (Math.hypot(event.clientX - down.x, event.clientY - down.y) > blankClickDragThresholdPx) return;
@@ -1410,20 +1707,55 @@
         zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1 / 1.2);
       },
       fitToScreen: function fitToScreen() {
-        const bbox = svgEl.getBBox();
+        const bbox = readContentBounds();
         const visible = visibleFitArea();
         const width = visible.width;
         const height = visible.height;
         if (!bbox.width || !bbox.height || !width || !height) return;
-        scale = clamp(Math.min(width / bbox.width, height / bbox.height) * 0.9, minScale, maxScale);
-        tx = visible.left + (width - bbox.width * scale) / 2 - bbox.x * scale;
+        scale = clamp(Math.min(width / bbox.width, height / bbox.height) * 0.9, readMinScale(visible), maxScale);
+        const scaledWidth = bbox.width * scale;
+        if (scaledWidth <= width) {
+          tx = visible.left + (width - scaledWidth) / 2 - bbox.x * scale;
+        } else {
+          tx = visible.left - bbox.x * scale;
+        }
         ty = visible.top + (height - bbox.height * scale) / 2 - bbox.y * scale;
         apply();
       },
-      focusNode: function focusNode(nodeId, options) {
-        const node = Array.from(svgEl.querySelectorAll('g.node')).find(function matchNode(element) {
-          return element.getAttribute('data-node-id') === nodeId;
-        });
+      // 阅读视图(sequence 首屏默认):宽度适配、顶部对齐——消息文字保持原始
+      // 字号量级,先读开头,后续用平移/滚轮/全图按钮继续。宽图(参与者多)以
+      // 0.75 倍为可读下限(16px 文字缩放后仍 ≥ 12px)。横向:缩放后能放进安全区
+      // 才居中;放不下时从内容左边界开始(保留安全区留白),调用起点与第一条
+      // 消息不被裁出画布,宽出的部分交给向右平移。缩放计算与 Fit 共用同一套
+      // 内容边界与安全区。
+      readView: function readView() {
+        const bbox = readContentBounds();
+        const visible = visibleFitArea();
+        const width = visible.width;
+        if (!bbox.width || !bbox.height || !width || !visible.height) return;
+        const fitByWidth = (width * 0.92) / bbox.width;
+        scale = clamp(Math.max(fitByWidth, 0.75), readMinScale(visible), maxScale);
+        const scaledWidth = bbox.width * scale;
+        if (scaledWidth <= width) {
+          tx = visible.left + (width - scaledWidth) / 2 - bbox.x * scale;
+        } else {
+          tx = visible.left - bbox.x * scale;
+        }
+        ty = visible.top - bbox.y * scale;
+        apply();
+      },
+      focusNode: function focusNode(focusId, options) {
+        // 泛化定位:flowchart 的 g.node 与 sequence 的消息记录/参与者统一挂
+        // data-icm-focus-id;旧行为(按 data-node-id 查节点)保留为回退。
+        let node = null;
+        if (focusId && typeof CSS !== 'undefined' && CSS.escape) {
+          node = svgEl.querySelector('[data-icm-focus-id="' + CSS.escape(String(focusId)) + '"]');
+        }
+        if (!node) {
+          node = Array.from(svgEl.querySelectorAll('g.node')).find(function matchNode(element) {
+            return element.getAttribute('data-node-id') === focusId;
+          }) || null;
+        }
         if (!node) return;
         const viewportRect = viewportEl.getBoundingClientRect();
         const nodeRect = node.getBoundingClientRect();
@@ -2694,6 +3026,7 @@
     function Toolbar(props) {
       const panZoom = props.panZoom;
       const copy = uiCopyForLocale(props.locale);
+      const hint = props.diagramKind === 'sequence' ? copy.sequenceInteractionHint : copy.interactionHint;
       return h('div', { className: 'icm-controls' },
         h('div', { className: 'icm-toolbar', role: 'toolbar', 'aria-label': copy.graphControls },
           h('button', { type: 'button', onClick: function zoomIn() { panZoom.zoomIn(); }, 'aria-label': copy.zoomIn }, '+'),
@@ -2702,20 +3035,47 @@
         ),
         h('p', { className: 'icm-interaction-hint' },
           h('span', { className: 'icm-interaction-hint-icon', 'aria-hidden': 'true' }, 'i'),
-          copy.interactionHint,
+          hint,
         ),
       );
     }
 
     function Legend(props) {
       const copy = uiCopyForLocale(props.locale);
-      return h('div', { className: 'icm-legend', role: 'group', 'data-icm-ui-locale': props.locale, 'aria-label': copy.ariaLabel },
-        h('div', { className: 'icm-legend-section', 'aria-label': copy.reading },
-          h('span', { className: 'icm-legend-caption' }, copy.reading),
+      const isSequence = props.diagramKind === 'sequence';
+      const readingKeys = isSequence
+        ? [
+          h('span', { className: 'icm-reading-key group' }, copy.sequenceLegendParticipant),
+          h('span', { className: 'icm-reading-key condition' }, copy.sequenceLegendMessage),
+          h('span', { className: 'icm-reading-key action' }, copy.sequenceLegendFrame),
+        ]
+        : [
           h('span', { className: 'icm-reading-key group' }, copy.group),
           h('span', { className: 'icm-reading-key condition' }, copy.condition),
           h('span', { className: 'icm-reading-key action' }, copy.action),
           h('span', { className: 'icm-reading-key internal' }, copy.internal),
+        ];
+      const operationKeys = isSequence
+        ? [
+          h('span', { className: 'icm-operation-pointer' }, copy.sequenceInteractionHint),
+          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
+          h('kbd', null, 'Tab'), h('span', { className: 'icm-operation-label' }, copy.tabAction),
+          h('kbd', null, 'Enter'), h('span', { className: 'icm-operation-label' }, copy.enterAction),
+          h('kbd', null, 'Esc'), h('span', { className: 'icm-operation-label' }, copy.escapeAction),
+        ]
+        : [
+          h('span', { className: 'icm-operation-pointer' }, copy.interactionHint),
+          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
+          h('span', { className: 'icm-operation-pointer' }, copy.pinAction),
+          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
+          h('kbd', null, 'Tab'), h('span', { className: 'icm-operation-label' }, copy.tabAction),
+          h('kbd', null, 'Enter'), h('span', { className: 'icm-operation-label' }, copy.enterAction),
+          h('kbd', null, 'Esc'), h('span', { className: 'icm-operation-label' }, copy.escapeAction),
+        ];
+      return h('div', { className: 'icm-legend', role: 'group', 'data-icm-ui-locale': props.locale, 'aria-label': copy.ariaLabel },
+        h('div', { className: 'icm-legend-section', 'aria-label': copy.reading },
+          h('span', { className: 'icm-legend-caption' }, copy.reading),
+          readingKeys,
         ),
         h('div', { className: 'icm-legend-section', 'aria-label': copy.evidence },
           h('span', { className: 'icm-legend-caption' }, copy.evidence),
@@ -2725,13 +3085,7 @@
         ),
         h('div', { className: 'icm-legend-section icm-operation-guide', 'aria-label': copy.controls },
           h('span', { className: 'icm-legend-caption' }, copy.controls),
-          h('span', { className: 'icm-operation-pointer' }, copy.interactionHint),
-          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
-          h('span', { className: 'icm-operation-pointer' }, copy.pinAction),
-          h('span', { className: 'icm-operation-separator', 'aria-hidden': 'true' }, '·'),
-          h('kbd', null, 'Tab'), h('span', { className: 'icm-operation-label' }, copy.tabAction),
-          h('kbd', null, 'Enter'), h('span', { className: 'icm-operation-label' }, copy.enterAction),
-          h('kbd', null, 'Esc'), h('span', { className: 'icm-operation-label' }, copy.escapeAction),
+          operationKeys,
         ),
       );
     }
@@ -2793,9 +3147,12 @@
       },
         h('h2', null, node.title),
         h('span', { className: 'claim-state ' + node.claimState }, claimStateLabel(props.locale, node.claimState)),
-        h('p', { className: 'icm-summary' }, node.detail.summary),
-        node.detail.segments.length === 0
-          ? h('p', { className: 'icm-empty' }, copy.emptyDetail)
+        // detail 为可空(sequence 参与者/消息不逼人生造内容):缺省时省略摘要
+        // 与段落区域,只保留标题、状态与证据列表;flowchart 节点的 detail 必填,
+        // 行为不变。
+        node.detail ? h('p', { className: 'icm-summary' }, node.detail.summary) : null,
+        !node.detail || node.detail.segments.length === 0
+          ? (node.detail ? h('p', { className: 'icm-empty' }, copy.emptyDetail) : null)
           : node.detail.segments.map(function segmentView(segment, index) {
             return h(SegmentTable, { key: index, segment });
           }),
@@ -2821,10 +3178,16 @@
       const selectedId = state[0];
       const setSelectedId = state[1];
       const scrollPositions = useRef(new Map());
-      // 图例本身属于本组件。layout effect 执行时它已经进入 DOM；在这里同步 Fit，
-      // 才不会出现页面首帧先按整张画布缩放、随后才避让图例的短暂错误状态。
-      useLayoutEffect(function fitAfterLegendLayout() {
-        props.panZoom.fitToScreen();
+      // 初始视图按图型分流:flowchart 全图概览(Fit);sequence 用阅读视图——
+      // 宽度适配、顶部对齐,消息文字保持可读,后续内容靠平移/滚轮/全图继续。
+      // 图例本身属于本组件。layout effect 执行时它已经进入 DOM；在这里同步初始
+      // 视图，才不会出现页面首帧先按整张画布缩放、随后才避让图例的短暂错误状态。
+      useLayoutEffect(function initialView() {
+        if (props.spec.meta && props.spec.meta.diagramKind === 'sequence') {
+          props.panZoom.readView();
+        } else {
+          props.panZoom.fitToScreen();
+        }
       }, [props.panZoom]);
       useEffect(function subscribeSelection() {
         const unsubscribe = onSelectedChange(setSelectedId);
@@ -2842,13 +3205,12 @@
           window.cancelAnimationFrame(frameId);
         };
       }, [selectedId, props.panZoom]);
-      const selected = selectedId ? props.spec.nodes.find(function findNode(node) {
-        return node.id === selectedId;
-      }) : null;
+      const selected = selectedId ? findSelectionViewModel(props.spec, selectedId) : null;
       const uiLocale = uiLocaleForSpec(props.spec);
+      const diagramKind = props.spec.meta && props.spec.meta.diagramKind === 'sequence' ? 'sequence' : 'flowchart';
       return h('div', { className: 'icm-overlay' },
-        h(Toolbar, { panZoom: props.panZoom, locale: uiLocale }),
-        h(Legend, { locale: uiLocale }),
+        h(Toolbar, { panZoom: props.panZoom, locale: uiLocale, diagramKind }),
+        h(Legend, { locale: uiLocale, diagramKind }),
         h(DetailPanel, { node: selected, onClose: clearSelection, scrollPositions, locale: uiLocale }),
       );
     }
@@ -2869,6 +3231,18 @@
     ui.mount(spec, panZoom);
   }
 
+  // App 的选择模型查找:sequence 走渲染层组装的视图模型(participant:<id> /
+  // message:<递归路径>),flowchart 维持按 node.id 查找,行为不变。
+  function findSelectionViewModel(spec, selectedId) {
+    if (spec.meta && spec.meta.diagramKind === 'sequence') {
+      const models = buildSequenceViewModels(spec);
+      return models.get(selectedId) || null;
+    }
+    return spec.nodes.find(function findNode(node) {
+      return node.id === selectedId;
+    }) || null;
+  }
+
   async function main() {
     const spec = window.__ICM_MAPSPEC__;
     const depsConfig = window.__ICM_DEPS_CONFIG__;
@@ -2877,6 +3251,72 @@
       const viewport = document.getElementById('graph-viewport');
       const canvas = document.getElementById('graph-canvas');
       if (!viewport || !canvas) throw new Error('缺少图谱视口或画布');
+      const isSequence = !!spec && !!spec.meta && spec.meta.diagramKind === 'sequence';
+      if (isSequence) {
+        const svgEl = await renderSequenceGraph(spec, canvas);
+        annotateSequenceDiagram(svgEl, spec);
+        // 泛化命中判断:命中消息记录与参与者时跳过指针捕获,保留原生 click。
+        const panZoom = createPanZoom(viewport, canvas, svgEl, function sequenceHitTest(target) {
+          if (!target || typeof target.closest !== 'function') return false;
+          return !!target.closest('[data-icm-focus-id]');
+        }, function sequenceContentBounds() {
+          // Mermaid 的 sequence SVG 内含不可见测量元素,裸 getBBox 的高度会被撑到
+          // 约 2000px;viewBox 精确包裹可见内容,作为 Fit 的内容边界(异常时回退)。
+          try {
+            const view = svgEl.viewBox && svgEl.viewBox.baseVal;
+            if (view && view.width > 0 && view.height > 0) {
+              return { x: view.x, y: view.y, width: view.width, height: view.height };
+            }
+          } catch {
+            // viewBox 不可用时回退 getBBox。
+          }
+          return svgEl.getBBox();
+        }, function sequenceFitInsets() {
+          // 初始 Fit 与点击 Fit 都要避开顶部操作提示条:按控件实际底边动态测量,
+          // 并保留 12px 间距,否则参与者标题会落在提示条区域内。
+          const controls = document.querySelector('.icm-controls');
+          if (!controls) return { top: 0, right: 0, bottom: 0, left: 0 };
+          const bottom = controls.getBoundingClientRect().bottom - viewport.getBoundingClientRect().top;
+          return { top: Math.max(0, bottom + 12), right: 0, bottom: 0, left: 0 };
+        }, function sequenceMinScale(visible) {
+          // 宽图或高图的全图适配倍率可能低于 0.15。visible 与 fitToScreen 使用
+          // 的安全区是同一份计算(顶部控件 + 底部图例之后),保证下限不大于
+          // Fit 实际达成的倍率——高图由扣除覆盖层后的高度决定,宽图由宽度决定。
+          try {
+            const view = svgEl.viewBox && svgEl.viewBox.baseVal;
+            if (view && view.width > 0 && view.height > 0 && visible.height > 0 && visible.width > 0) {
+              const fitScale = Math.min(visible.width / view.width, visible.height / view.height) * 0.9;
+              return Math.min(0.15, fitScale * 0.9);
+            }
+          } catch {
+            // viewBox 不可用时保持固定下限。
+          }
+          return 0.15;
+        });
+        window.interactiveCodeMap = {
+          panZoom,
+          spec,
+          svgEl,
+          diagramKind: 'sequence',
+          // 自检合同:消息线与序号数量都必须等于递归展开后的声明条数——
+          // 消息线是每条消息恰好一个的稳定锚点,序号断言防渲染静默失败与
+          // 指令注入关闭编号。
+          verifySequenceMapping: function verifySequenceMapping() {
+            const lineCount = svgEl.querySelectorAll('.messageLine0, .messageLine1').length;
+            const numberCount = svgEl.querySelectorAll('text.sequenceNumber').length;
+            const declared = sequenceMessagesInOrder(spec).length;
+            return {
+              diagramKind: 'sequence',
+              messageLineCount: lineCount,
+              sequenceNumberCount: numberCount,
+              declaredMessageCount: declared,
+              ok: lineCount === declared && numberCount === declared,
+            };
+          },
+        };
+        mountReact(spec, panZoom);
+        return;
+      }
       const svgEl = await renderGraph(spec, canvas);
       applySubgraphTones(svgEl, spec);
       bindNodeEvents(svgEl, spec);
@@ -2890,6 +3330,7 @@
         },
         spec,
         svgEl,
+        diagramKind: 'flowchart',
       };
       reconnectHandoffPathsToNodes(svgEl, spec);
       detectAndRepairSubgraphTitles(svgEl);

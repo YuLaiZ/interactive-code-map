@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "title": "Payment callback retry sequence (fixture)",
+    "question": "Fixture: a payment callback chain with a retry loop, a nested opt frame, an exclusive alt split, and mixed evidence states, to exercise the sequence rendering chain end to end.",
+    "scope": "TEST-ONLY fixture marker: synthetic interaction fixture for browser assertions; NOT a real codebase. meta.languageProfile === 'fixture' marks it test-only — production build-html.mjs MUST reject any MapSpec with this marker; tests admit it only under --allow-test-fixture and only for files under tests/**/fixtures/**. Verified evidence points at tests/browser/fixtures/sequence-fixture-evidence.txt, a real static file; inferred and unconfirmed evidence intentionally references paths that do not exist. Participant ids deliberately include sequence syntax keywords (end, alt) to lock the internal icm_pN id mapping.",
+    "languageProfile": "fixture",
+    "uiLocale": "en",
+    "diagramKind": "sequence",
+    "summary": "A client creates a payment intent on the gateway; the gateway posts a ledger entry and enters a narrow retry loop whose condition is a single long word, containing a nested opt frame and an alt split between issuing a retry and notifying failure. The outer activation wraps the whole loop, the result is returned to the client, and an unconfirmed audit event is emitted. Every message and participant carries three-state evidence."
+  },
+  "participants": [
+    {
+      "id": "client",
+      "title": "Client app",
+      "claimState": "verified",
+      "evidence": [
+        { "path": "tests/browser/fixtures/sequence-fixture-evidence.txt", "lineStart": 1, "lineEnd": 2, "symbol": "client", "note": "Fixture participant existence is anchored to the static evidence file.", "state": "verified" }
+      ],
+      "detail": {
+        "summary": "The client starts the payment and receives the final result; it also verifies the request signature locally.",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "Client responsibilities",
+            "headers": ["Responsibility", "Why it matters"],
+            "rows": [
+              ["Create payment intent", "Starts the interaction under test"],
+              ["Verify local signature", "Exercises a self-message record"]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "end",
+      "title": "Payment gateway",
+      "claimState": "verified",
+      "evidence": [
+        { "path": "tests/browser/fixtures/sequence-fixture-evidence.txt", "lineStart": 3, "lineEnd": 4, "symbol": "gateway", "note": "Fixture participant existence is anchored to the static evidence file.", "state": "verified" }
+      ]
+    },
+    {
+      "id": "ledger",
+      "title": "Ledger service",
+      "claimState": "inferred",
+      "evidence": [
+        { "path": "fixture/sequence/ledger.js", "state": "inferred" }
+      ]
+    },
+    {
+      "id": "alt",
+      "title": "Audit log",
+      "claimState": "unconfirmed",
+      "evidence": [
+        { "path": "fixture/sequence/audit.js", "state": "unconfirmed" }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "from": "client",
+      "to": "end",
+      "label": "Create payment intent",
+      "claimState": "verified",
+      "evidence": [
+        { "path": "tests/browser/fixtures/sequence-fixture-evidence.txt", "lineStart": 1, "lineEnd": 2, "state": "verified" }
+      ],
+      "detail": {
+        "summary": "The initial call activates the gateway for the whole exchange; the retry loop is wrapped by this activation.",
+        "segments": [
+          {
+            "kind": "value",
+            "title": "Request fields",
+            "headers": ["Field", "Role"],
+            "rows": [
+              ["orderId", "Client-side reference returned in every response"],
+              ["amountCents", "Charged amount in minor units"]
+            ]
+          }
+        ]
+      },
+      "activation": { "activatesTo": true }
+    },
+    {
+      "from": "end",
+      "to": "ledger",
+      "label": "Post ledger entry",
+      "claimState": "verified",
+      "evidence": [
+        { "path": "tests/browser/fixtures/sequence-fixture-evidence.txt", "lineStart": 5, "lineEnd": 7, "state": "verified" }
+      ]
+    },
+    {
+      "frame": true,
+      "kind": "loop",
+      "label": "IdempotencyWindowCallbackRetryBudgetExhaustionThresholdCheck",
+      "messages": [
+        {
+          "from": "end",
+          "to": "ledger",
+          "label": "Confirm posting",
+          "claimState": "inferred",
+          "evidence": [
+            { "path": "fixture/sequence/retry.js", "state": "inferred" }
+          ]
+        },
+        {
+          "frame": true,
+          "kind": "opt",
+          "label": "Balance already posted",
+          "messages": [
+            {
+              "from": "ledger",
+              "to": "end",
+              "label": "Return posting receipt",
+              "arrowKind": "dashed",
+              "claimState": "verified",
+              "evidence": [
+                { "path": "tests/browser/fixtures/sequence-fixture-evidence.txt", "lineStart": 5, "lineEnd": 7, "state": "verified" }
+              ]
+            }
+          ]
+        },
+        {
+          "frame": true,
+          "kind": "alt",
+          "branches": [
+            {
+              "label": "Retry limit not reached",
+              "messages": [
+                {
+                  "from": "end",
+                  "to": "ledger",
+                  "label": "Issue retry",
+                  "claimState": "inferred",
+                  "evidence": [
+                    { "path": "fixture/sequence/retry.js", "state": "inferred" }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Retry limit reached",
+              "messages": [
+                {
+                  "from": "end",
+                  "to": "client",
+                  "label": "Payment failed notification",
+                  "arrowKind": "dashed",
+                  "claimState": "unconfirmed",
+                  "evidence": [
+                    { "path": "fixture/sequence/notify.js", "state": "unconfirmed" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "end",
+      "to": "client",
+      "label": "Return payment result",
+      "arrowKind": "dashed",
+      "claimState": "verified",
+      "evidence": [
+        { "path": "tests/browser/fixtures/sequence-fixture-evidence.txt", "lineStart": 5, "lineEnd": 7, "state": "verified" }
+      ],
+      "activation": { "deactivatesFrom": true }
+    },
+    {
+      "from": "client",
+      "to": "client",
+      "label": "Wrap: retry $$x$$ <br/> 50% a & b ; c # d \" e < f > g",
+      "claimState": "inferred",
+      "evidence": [
+        { "path": "fixture/sequence/signature.js", "state": "inferred" }
+      ]
+    },
+    {
+      "from": "end",
+      "to": "alt",
+      "label": "Emit audit event",
+      "claimState": "unconfirmed",
+      "evidence": [
+        { "path": "fixture/sequence/audit.js", "state": "unconfirmed" }
+      ]
+    }
+  ]
+}

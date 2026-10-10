@@ -2,16 +2,26 @@
 
 > **English** | [简体中文](README.zh-CN.md)
 
-A cross-client skill that turns codebase evidence into a single interactive HTML code map — or a described non-code business process into the same evidence-backed map — with explicit evidence states and a structured MapSpec that separates research from presentation.
+A cross-client skill that turns codebase evidence into a single interactive HTML code map — or a described non-code business process into the same evidence-backed map — with explicit evidence states and a structured MapSpec that separates research from presentation. Every map is a flowchart or a sequence diagram, chosen by the question: structure and dependencies read as a flowchart, while "who calls whom in what order" exchanges such as request/response, callback retries, and protocol handshakes read as a sequence diagram with per-message evidence.
 
 ## See it in action
 
+### Flowchart
+
 ![Interactive code map demo showing zoom, pan, relationship highlighting, click-to-pin, and line-level evidence](docs/assets/interactive-code-map-demo.gif)
+
+### Sequence diagram
+
+Follow the call order, explore conditional exchanges, and open the source evidence behind a message.
+
+![Sequence diagram demo showing the read view, zoom, pan, message evidence, single-selection highlighting, and the full-map overview](docs/assets/interactive-code-map-sequence-demo.gif)
 
 ## Online demos
 
-- [English demo](https://yulaiz.github.io/interactive-code-map/en/)
+- [English demo](https://yulaiz.github.io/interactive-code-map/en/) — flowchart
+- [English sequence demo](https://yulaiz.github.io/interactive-code-map/en/sequence/)
 - [简体中文演示](https://yulaiz.github.io/interactive-code-map/zh-CN/)
+- [简体中文时序演示](https://yulaiz.github.io/interactive-code-map/zh-CN/sequence/)
 
 ## Installation
 
@@ -64,7 +74,9 @@ Before generation, the agent asks whether keyboard operation and small-viewport 
 
 Each generated map has a fixed, localized guide with three labelled sections: reading guide, evidence status, and controls. Each node also exposes its evidence state directly with a small legend-matched dot in the card's upper-left corner; the border treatment provides a secondary cue. The controls section shows the primary interaction: click a card for details; click any relationship line to pin the exact hover animation (one pin at a time, hover behavior unchanged), cleared by clicking the line again, pressing `Esc`, or a blank-area click that is not a canvas drag; use `Tab` to reach cards and relationship lines, `Enter` to open or pin, and `Esc` to close the detail panel and clear the pin. Nodes also accept `Space` as the equivalent button action. The generated document language, graph region name, and dependency-failure page use the same locale. The generation-time confirmation above still determines whether keyboard and small-viewport behavior are in scope for acceptance.
 
-For runnable original examples, see the [English MapSpec](examples/demo/expected-mapspec.json) and [Chinese MapSpec](examples/demo/expected-mapspec.zh-CN.json). They share the same source repository, graph structure, claim states, and evidence data; only reader-facing map copy and fixed UI are localized. The English demo uses `global`; the Chinese demo is explicitly for China-mainland visitors and uses `china-friendly`. Rebuild the checked-in HTML files with:
+Sequence maps (`meta.diagramKind: "sequence"`) replace node cards and relationship lines with lifelines and ordered messages, grouped by `loop`/`opt`/`alt` frames for repetition, conditions, and exclusive branches: participants and messages each carry three-state evidence, every message is auto-numbered, and clicking a message or participant opens its evidence detail and keeps that record highlighted until the panel closes or `Esc` clears it. The sequence legend speaks of participants, messages, and frames, and the relationship-pinning action does not apply.
+
+For runnable original examples, see the [English MapSpec](examples/demo/expected-mapspec.json) and [Chinese MapSpec](examples/demo/expected-mapspec.zh-CN.json). They share the same source repository, graph structure, claim states, and evidence data; only reader-facing map copy and fixed UI are localized. The English demo uses `global`; the Chinese demo is explicitly for China-mainland visitors and uses `china-friendly`. The [English sequence MapSpec](examples/demo/expected-mapspec.sequence.json) and [Chinese sequence MapSpec](examples/demo/expected-mapspec.sequence.zh-CN.json) read the very same sample repository as a call sequence, showing the two diagram kinds side by side. Rebuild the checked-in HTML files with:
 
 ~~~bash
 node skill/renderer/build-html.mjs \
@@ -81,6 +93,23 @@ node skill/renderer/build-html.mjs \
   --repo-root examples/demo/sample-repo \
   --cdn-profile china-friendly \
   --canonical-url https://yulaiz.github.io/interactive-code-map/zh-CN/
+~~~
+
+~~~bash
+node skill/renderer/build-html.mjs \
+  --in examples/demo/expected-mapspec.sequence.json \
+  --out examples/demo/expected-output.sequence.html \
+  --repo-root examples/demo/sample-repo \
+  --canonical-url https://yulaiz.github.io/interactive-code-map/en/sequence/
+~~~
+
+~~~bash
+node skill/renderer/build-html.mjs \
+  --in examples/demo/expected-mapspec.sequence.zh-CN.json \
+  --out examples/demo/expected-output.sequence.zh-CN.html \
+  --repo-root examples/demo/sample-repo \
+  --cdn-profile china-friendly \
+  --canonical-url https://yulaiz.github.io/interactive-code-map/zh-CN/sequence/
 ~~~
 
 ## Principles
